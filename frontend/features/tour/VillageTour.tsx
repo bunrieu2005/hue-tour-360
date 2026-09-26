@@ -1,21 +1,15 @@
 'use client';
 
-import { useState } from "react";
+import { ITINERARY_STEPS } from "@/data/itinerary";
+import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useProgress } from "@/context/ProgressContext";
 import { villages } from "@/data/villages";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Hand, X, BookOpen, Workflow, Palette, CheckCircle2, MessageCircle, Volume2, VolumeX, CalendarDays, Clock3, Users, ChevronRight, SquareCheckBig } from "lucide-react";
+import { ArrowLeft, Hand, X, BookOpen, Palette, CheckCircle2, MessageCircle, Map,Volume2, VolumeX, CalendarDays, ChevronDown, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import PaintingActivity from "@/features/activities/PaintingActivity";
-import SequencingActivity from "@/features/activities/SequencingActivity";
-import IncenseActivity from "@/features/activities/IncenseActivity";
-import CraftingActivity from "@/features/activities/CraftingActivity";
-import EnamelActivity from "@/features/activities/EnamelActivity";
-import PotteryActivity from "@/features/activities/PotteryActivity";
-import WeavingActivity from "@/features/activities/WeavingActivity";
-import WoodworkActivity from "@/features/activities/WoodworkActivity";
+import ExperienceTab from "./ExperienceTab";
 
 type LangKey = "vi" | "en";
 
@@ -26,9 +20,10 @@ interface SceneConfig {
     greeting: Record<LangKey, string>;
     signGreeting: string;
     particles: string[];
+    standingImageUrl?: string;
+    audioUrl?: string;
+    captions?: { time: number; text: string }[];
 }
-
-const round = (value: number) => Math.round(value);
 
 const SCENES: Record<string, SceneConfig> = {
     "sinh-painting": {
@@ -36,96 +31,31 @@ const SCENES: Record<string, SceneConfig> = {
         clothingColor: "#7A1800",
         isFemale: false,
         greeting: {
-            vi: "Xin chào! Tôi là nghệ nhân Lê Văn Sửu — 72 tuổi, hơn 50 năm gắn bó với tranh dân gian Sình. Mỗi nét vẽ, mỗi màu sắc đều mang tâm hồn của người nghệ nhân. Tranh Sình không chỉ là hình vẽ mà còn là câu chuyện văn hóa ngàn năm của cha ông để lại.",
-            en: "Hello! I am artisan Le Van Suu — 72 years old, devoted over 50 years to Sinh folk painting. Each stroke and colour carries the craftsman's soul. Sinh paintings are not mere images — they are thousand-year cultural stories from our ancestors.",
+            vi: "Xin chào! Tôi là nghệ nhân Kỳ Hữu Phước — 72 tuổi, hơn 50 năm gắn bó với tranh dân gian Sình. Mỗi nét vẽ, mỗi màu sắc đều mang tâm hồn của người nghệ nhân. Tranh Sình không chỉ là hình vẽ mà còn là câu chuyện văn hóa ngàn năm của cha ông để lại.",
+            en: "Hello! I am artisan Ky Huu Phuoc — 72 years old, devoted over 50 years to Sinh folk painting. Each stroke and colour carries the craftsman's soul. Sinh paintings are not mere images — they are thousand-year cultural stories from our ancestors.",
         },
-        signGreeting: "👋 Xin chào!\n🎨 Nghệ nhân Lê Văn Sửu\n👴 72 tuổi • 50+ năm nghề\n🖌️ Tranh dân gian Sình\n📜 Di sản UNESCO 2021",
+        signGreeting: "👋 Xin chào!\n🎨 Nghệ nhân Kỳ Hữu Phước\n👴 72 tuổi • 50+ năm nghề\n🖌️ Tranh dân gian Sình\n📜 Di sản UNESCO 2021",
+        standingImageUrl: "/tranhlangsinh-img/nghenhan-voice.png",
+        audioUrl: "/voice/voiceLangsinhmp3.mp3",
         particles: ["🖌️", "📜", "✨", "🔴", "🖌️"],
+        captions: [
+            { time: 0, text: "Xin chào! Tôi là nghệ nhân Kỳ Hữu Phước, đã hơn năm mươi năm gắn bó với tranh làng Sình." },
+            { time: 5, text: "Nghề này của cha ông để lại, có từ hàng trăm năm trước, gắn liền với vùng đất Lại Ân bên dòng sông Hương." },
+            { time: 11, text: "Có những năm tháng khó khăn, nghề tranh tưởng chừng mai một." },
+            { time: 15, text: "Nhưng tôi vẫn lặng lẽ giữ lấy từng bản khắc gỗ, như giữ lấy hồn cốt của tổ tiên." },
+            { time: 21, text: "Mỗi nét vẽ, mỗi gam màu đều được làm thủ công, từ giấy dó đến màu tự nhiên." },
+            { time: 27, text: "Ngày nay, khách phương xa tìm về ngày một nhiều." },
+            { time: 31, text: "Tranh làng Sình lại có dịp sống dậy, mang theo câu chuyện văn hóa của một vùng đất cố đô." },
+        ],
     },
-    "thanh-tien-paper-flower": {
-        bgStyle: { background: "linear-gradient(180deg, #050F0A 0%, #0F3D20 45%, #2A7A40 80%, #4AAA65 100%)" },
-        clothingColor: "#1A5A2A",
-        isFemale: true,
-        greeting: {
-            vi: "Chào mừng đến làng Thanh Tiên! Tôi là nghệ nhân Phan Thị Tuyết — thế hệ thứ năm làm hoa giấy. Mỗi cánh hoa được tạo hình từ đôi bàn tay khéo léo, mang đến niềm vui và may mắn cho mọi nhà mỗi dịp Tết đến xuân về.",
-            en: "Welcome to Thanh Tien village! I am artisan Phan Thi Tuyet — 5th generation paper flower maker. Each petal shaped by skilled hands brings joy and luck to every home at Tet.",
-        },
-        signGreeting: "👋 Chào mừng!\n🌸 Phan Thị Tuyết\n👵 65 tuổi • Thế hệ thứ 5\n🌺 Hoa giấy Thanh Tiên\n🎊 Biểu tượng Tết Huế",
-        particles: ["🌸", "🌺", "🌷", "🌸", "✿"],
-    },
-    "thuy-xuan-incense": {
-        bgStyle: { background: "linear-gradient(180deg, #060410 0%, #12093A 45%, #2A1868 80%, #3D2880 100%)" },
-        clothingColor: "#1E2A7A",
-        isFemale: false,
-        greeting: {
-            vi: "Xin chào! Tôi là nghệ nhân Nguyễn Văn Hải — 58 tuổi, kế thừa nghề từ ông nội. Mùi hương Thủy Xuân không chỉ là hương thơm mà là sự thanh tịnh, kết nối con người với tâm linh. Mỗi cây hương chứa đựng tâm huyết và tình yêu với nghề truyền thống.",
-            en: "Hello! I am artisan Nguyen Van Hai — 58 years old, inheriting the craft from my grandfather. Thuy Xuan incense is not just fragrance — it is purity, connecting people with spirituality. Each stick holds dedication and love for our traditional craft.",
-        },
-        signGreeting: "👋 Xin chào!\n🕯️ Nguyễn Văn Hải\n👨 58 tuổi • Kế thừa ông nội\n🌿 Hương thảo mộc tự nhiên\n🏛️ Dùng trong đình chùa",
-        particles: ["✨", "💜", "🌫️", "⭐", "🌿"],
-    },
-    "non-la-conical-hat": {
-        bgStyle: { background: "linear-gradient(180deg, #040D1A 0%, #0F2F60 45%, #2060A0 80%, #3A88C8 100%)" },
-        clothingColor: "#4A3820",
-        isFemale: true,
-        greeting: {
-            vi: "Kính chào! Tôi là nghệ nhân Trần Thị Mai — 68 tuổi, cả đời gắn bó với nghề nón lá. Mỗi chiếc nón bài thơ là một tác phẩm nghệ thuật. Khi ánh nắng chiếu qua, những vần thơ ẩn hiện như lời ru của đất trời Huế.",
-            en: "Greetings! I am artisan Tran Thi Mai — 68 years old, devoted a lifetime to hat making. Each poem hat is a work of art. When sunlight shines through, verses shimmer like lullabies from Hue's ancient land and sky.",
-        },
-        signGreeting: "🙏 Kính chào!\n👒 Trần Thị Mai\n👵 68 tuổi • Cả đời nghề\n🌿 Nón bài thơ truyền thống\n☀️ Thơ hiện khi soi nắng",
-        particles: ["🍃", "🌿", "🎋", "🍃", "☀️"],
-    },
-    "phap-lam-enamel": {
-        bgStyle: { background: "linear-gradient(180deg, #080520 0%, #0E1060 45%, #1A1AB0 80%, #2830D0 100%)" },
-        clothingColor: "#1A108A",
-        isFemale: true,
-        greeting: {
-            vi: "Xin chào! Tôi là nghệ nhân Nguyễn Thị Kim Hoa — 60 tuổi, thế hệ thứ ba của gia đình làm pháp lam tại Huế. Sau khi nung trong lò ở nhiệt độ hơn 800 độ, màu men mới hiện ra đúng sắc — đó là khoảnh khắc kỳ diệu nhất trong nghề. Mỗi tác phẩm pháp lam là sự kết hợp giữa lửa, kim loại và nghệ thuật.",
-            en: "Hello! I am artisan Nguyen Thi Kim Hoa — 60 years old, third generation phap lam family in Hue. After firing at over 800 degrees, the enamel colors finally reveal their true shade — that is the most magical moment in this craft. Each phap lam piece is the union of fire, metal, and art.",
-        },
-        signGreeting: "👋 Xin chào!\n✨ Nguyễn Thị Kim Hoa\n👩 60 tuổi • Thế hệ thứ 3\n🎨 Nghề pháp lam triều Nguyễn\n🔥 Nung 800°C để màu hiện",
-        particles: ["✨", "💎", "🔵", "⭐", "💙"],
-    },
-    "phuoc-tich-pottery": {
-        bgStyle: { background: "linear-gradient(180deg, #1A0A04 0%, #5A2A10 45%, #8B4818 80%, #B06030 100%)" },
-        clothingColor: "#7A3A18",
-        isFemale: false,
-        greeting: {
-            vi: "Xin chào! Tôi là nghệ nhân Hoàng Tấn Đức — 65 tuổi, thế hệ thứ 15 làm gốm tại làng Phước Tích. Khi tôi đặt tay lên khối đất xoay, tôi cảm nhận được sự kết nối với 14 thế hệ trước. Đất sét Phước Tích có hồn — mỗi chiếc lu gốm là cuộc đối thoại giữa đôi tay, đất và lửa.",
-            en: "Hello! I am artisan Hoang Tan Duc — 65 years old, 15th generation potter at Phuoc Tich village. When I place my hands on the spinning clay, I feel connected to 14 previous generations. Phuoc Tich clay has a soul — each jar is a dialogue between hands, earth, and fire.",
-        },
-        signGreeting: "👋 Xin chào!\n🏺 Hoàng Tấn Đức\n👨 65 tuổi • Thế hệ thứ 15\n🏛️ Gốm cung đình Nguyễn\n🔥 Nung lò củi 1000°C",
-        particles: ["🏺", "🌿", "🔥", "💧", "🟤"],
-    },
-    "a-luoi-weaving": {
-        bgStyle: { background: "linear-gradient(180deg, #030A04 0%, #0A2A10 45%, #1A5A20 80%, #2A8030 100%)" },
-        clothingColor: "#3A1A60",
-        isFemale: true,
-        greeting: {
-            vi: "Chào bạn! Tôi là Kăn Noan — 55 tuổi, người Pa Kô làng Ra Lin, A Lưới. Tôi học dệt Zèng từ năm 15 tuổi trên chiếc khung cửi của bà nội. Mỗi tấm Zèng là bức thư gửi cho con cháu — hoa văn kể chuyện rừng núi, thần linh và lòng người phụ nữ Pa Kô.",
-            en: "Hello! I am Kan Noan — 55 years old, Pa Ko woman from Ra Lin village, A Luoi. I learned Zeng weaving at age 15 on my grandmother's loom. Each Zeng cloth is a letter to our descendants — the patterns tell stories of mountains, deities, and the Pa Ko woman's heart.",
-        },
-        signGreeting: "👋 Chào bạn!\n🧵 Kăn Noan — Pa Kô\n👩 55 tuổi • 40 năm nghề\n🌿 Dệt Zèng UNESCO 2016\n🎨 30+ hoa văn cổ truyền",
-        particles: ["🧵", "🌿", "🎨", "🦋", "🌺"],
-    },
-    "kim-long-woodwork": {
-        bgStyle: { background: "linear-gradient(180deg, #0A0600 0%, #3A1A08 45%, #6A3010 80%, #A05020 100%)" },
-        clothingColor: "#4A2808",
-        isFemale: false,
-        greeting: {
-            vi: "Chào mừng đến làng mộc Kim Long! Tôi là nghệ nhân Trần Văn Lâm — 70 tuổi, Nghệ nhân Ưu tú quốc gia. Gỗ cũng có hồn như người. Người thợ giỏi phải lắng nghe hồn gỗ, hiểu thớ gỗ, rồi mới biết nên chạm khắc hình gì. Mỗi tác phẩm là cuộc đối thoại giữa người và gỗ.",
-            en: "Welcome to Kim Long woodcarving village! I am artisan Tran Van Lam — 70 years old, National Excellent Artisan. Wood has a soul like people. A skilled craftsman must listen to the wood's soul, understand its grain, before knowing what to carve. Each piece is a dialogue between person and wood.",
-        },
-        signGreeting: "👋 Chào mừng!\n🪵 Trần Văn Lâm\n👴 70 tuổi • 52 năm nghề\n🏆 Nghệ nhân Ưu tú 2015\n🎨 Chạm khắc và sơn mài",
-        particles: ["🪵", "✨", "🎨", "⭐", "🌿"],
-    },
+    
 };
+
 
 const ArtisanSVG = ({ villageId, clothingColor }: { villageId: string; clothingColor: string }) => {
     const skin = "#E8C09A";
     const hair = "#0D0400";
     const hat = "#D4B460";
-    const hatStroke = "#8B6914";
 
     return (
         <svg viewBox="0 0 200 285" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)]">
@@ -174,77 +104,89 @@ export default function VillageTour() {
     const villageId = Array.isArray(params.villageId) ? params.villageId[0] : params.villageId ?? "";
     const router = useRouter();
     const { language, setLanguage } = useLanguage();
-    const { completeActivity, villageProgress } = useProgress();
+    const { completedVillages, markVillageComplete,} = useProgress(); // Đã gỡ completeActivity vì ExperienceTab lo
 
     const [showBubble, setShowBubble] = useState(false);
     const [artisanTapped, setArtisanTapped] = useState(false);
-    const [activeTab, setActiveTab] = useState<"story" | "process" | "activity">("story");
-    const [activityCompleted, setActivityCompleted] = useState(false);
+const [activeTab, setActiveTab] = useState<"story" | "experience" | "itinerary">("story");
+    const [currentStep, setCurrentStep] = useState(0);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [currentCaptionText, setCurrentCaptionText] = useState("");
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
     const [isBookingOpen, setIsBookingOpen] = useState(false);
-    const [bookingDate, setBookingDate] = useState("");
-    const [bookingTime, setBookingTime] = useState("09:00");
-    const [bookingGuests, setBookingGuests] = useState(2);
-    const [bookingNote, setBookingNote] = useState("");
-    const [selectedWorkshopArtisans, setSelectedWorkshopArtisans] = useState<string[]>([]);
+    const [isItineraryOpen, setIsItineraryOpen] = useState(false);
     const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
     const village = villages.find((v) => v.id === villageId);
     const scene = SCENES[villageId] ?? SCENES["sinh-painting"];
     const lang: LangKey = language === "sign" ? "vi" : (language as LangKey);
     const isSign = language === "sign";
+    const canUseRealAudio = Boolean(scene.audioUrl) && lang === "vi" && !isSign;
+    const { addBooking } = useProgress(); // Kéo hàm addBooking từ Context ra
+    const [bookingDate, setBookingDate] = useState(""); // State lưu ngày đặt
+
+    const handleConfirmBooking = () => {
+        const vName = village?.name?.vi || "Làng nghề Cố Đô";
+        const dateStr = bookingDate || new Date().toLocaleDateString('vi-VN'); // Nếu không chọn ngày thì lấy ngày hôm nay
+        
+        addBooking(villageId, vName, dateStr); // Lưu vé vào kho!
+        setBookingConfirmed(true); // Chuyển sang màn hình "Thành công"
+    };
 
     if (!village) {
         return <div className="min-h-screen flex items-center justify-center"><p className="text-xl">Village not found</p></div>;
     }
 
-    const isActivityDone = villageProgress[villageId]?.activityCompleted || activityCompleted;
-    const workshopArtisans = village.workshopArtisans?.length ? village.workshopArtisans : [village.artisan];
+   const isActivityDone = (completedVillages || []).includes(villageId);
 
     const handleArtisanClick = () => {
+        if (canUseRealAudio) {
+            handleSpeak();
+            setArtisanTapped(true);
+            return;
+        }
         setShowBubble((p) => !p);
         if (!artisanTapped) setArtisanTapped(true);
     };
 
-    const handleActivityComplete = () => {
-        setActivityCompleted(true);
-        completeActivity(villageId);
-    };
-
     const openBookingModal = () => {
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + 7);
-        if (!bookingDate) setBookingDate(nextDate.toISOString().slice(0, 10));
-        setBookingGuests(2);
-        setBookingTime("09:00");
-        setBookingNote("");
-        setSelectedWorkshopArtisans([workshopArtisans[0].name]);
         setBookingConfirmed(false);
         setIsBookingOpen(true);
     };
 
-    const toggleWorkshopArtisan = (artisanName: string) => {
-        setSelectedWorkshopArtisans((current) => {
-            if (current.includes(artisanName)) {
-                if (current.length === 1) return current;
-                return current.filter((name) => name !== artisanName);
-            }
-            return [...current, artisanName];
-        });
-    };
-
-    const handleBookingSubmit = () => {
-        if (!bookingDate || !bookingTime) return;
-        setBookingConfirmed(true);
-    };
-
     const handleSignToggle = () => {
-        if (isSpeaking) { window.speechSynthesis?.cancel(); setIsSpeaking(false); }
+        if (isSpeaking) {
+            if (canUseRealAudio) {
+                audioRef.current?.pause();
+                if (audioRef.current) audioRef.current.currentTime = 0;
+            } else {
+                window.speechSynthesis?.cancel();
+            }
+            setIsSpeaking(false);
+            setCurrentCaptionText("");
+        }
         setLanguage(isSign ? "vi" : "sign");
         setShowBubble(false);
     };
 
     const handleSpeak = () => {
+        if (canUseRealAudio) {
+            const audio = audioRef.current;
+            if (!audio) return;
+            if (isSpeaking) {
+                audio.pause();
+                audio.currentTime = 0;
+                setIsSpeaking(false);
+                setCurrentCaptionText("");
+                return;
+            }
+            audio.currentTime = 0;
+            audio.play();
+            setIsSpeaking(true);
+            return;
+        }
+
         if (!window.speechSynthesis) return;
         if (window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
@@ -260,29 +202,36 @@ export default function VillageTour() {
         window.speechSynthesis.speak(utterance);
     };
 
-    const renderActivity = () => {
-        switch (village.activity.type) {
-            case "painting": return <PaintingActivity onComplete={handleActivityComplete} />;
-            case "sequencing": return <SequencingActivity steps={village.process.steps[lang]} onComplete={handleActivityComplete} />;
-            case "incense": return <IncenseActivity onComplete={handleActivityComplete} />;
-            case "crafting": return <CraftingActivity onComplete={handleActivityComplete} />;
-            case "enamel": return <EnamelActivity onComplete={handleActivityComplete} />;
-            case "pottery": return <PotteryActivity onComplete={handleActivityComplete} />;
-            case "weaving": return <WeavingActivity onComplete={handleActivityComplete} />;
-            case "woodwork": return <WoodworkActivity onComplete={handleActivityComplete} />;
-            default: return null;
-        }
+    const t = {
+        vi: { back: "Quay lại", story: "Câu chuyện", experience: "Trải nghiệm", workshop: "Đặt lịch trải nghiệm", workshopHint: "Chọn ngày, giờ và nghệ nhân để hẹn làm workshop", tap: "Chạm vào nghệ nhân để lắng nghe", signBtn: "Ký hiệu", quiz: "Làm bài kiểm tra", done: "Hoạt động hoàn thành!", quizHint: "Bạn đã sẵn sàng làm bài kiểm tra để nhận phần thưởng", artisan: "Nghệ nhân", speak: "Nghe", stop: "Dừng", confirmBooking: "Xác nhận lịch hẹn", cancelBooking: "Hủy", guestCount: "Số khách", note: "Ghi chú", selectedArtisans: "Chọn nghệ nhân", date: "Ngày", time: "Giờ", bookingSuccess: "Đã gửi yêu cầu đặt lịch", bookingSuccessHint: "Chúng tôi sẽ liên hệ để xác nhận workshop với các nghệ nhân bạn đã chọn.", singleArtisanNote: "Làng này hiện chỉ có 1 nghệ nhân trong dữ liệu mẫu." },
+        en: { back: "Back", story: "Story", experience: "Experience", workshop: "Book workshop", workshopHint: "Choose a date, time, and artisan(s) for a craft workshop", tap: "Tap the artisan to listen", signBtn: "Sign", quiz: "Take Quiz", done: "Activity complete!", quizHint: "You are ready to take the quiz for your reward", artisan: "Master Artisan", speak: "Listen", stop: "Stop", confirmBooking: "Confirm booking", cancelBooking: "Cancel", guestCount: "Guests", note: "Note", selectedArtisans: "Select artisan(s)", date: "Date", time: "Time", bookingSuccess: "Booking request sent", bookingSuccessHint: "We will contact you to confirm the workshop with the artisan(s) you selected.", singleArtisanNote: "This village currently has only one artisan." },
+        sign: { back: "⬅️", story: "📖 Câu chuyện", experience: "🎨 Trải nghiệm", workshop: "📅 Đặt lịch", workshopHint: "🗓️ Chọn ngày giờ và nghệ nhân", tap: "👆 Chạm nghệ nhân", signBtn: "🤟 ON", quiz: "📝 Kiểm tra", done: "✅ Xong!", quizHint: "📝 Làm bài kiểm tra", artisan: "👤 Nghệ nhân", speak: "🔊 Nghe", stop: "⏹ Dừng", confirmBooking: "✅ Xác nhận", cancelBooking: "Hủy", guestCount: "👥 Khách", note: "📝 Ghi chú", selectedArtisans: "👤 Nghệ nhân", date: "📅 Ngày", time: "⏰ Giờ", bookingSuccess: "✅ Đã gửi yêu cầu", bookingSuccessHint: "Chúng tôi sẽ liên hệ xác nhận workshop.", singleArtisanNote: "📌 Dữ liệu mẫu mới có 1 nghệ nhân." },
     };
 
-    const t = {
-        vi: { back: "Quay lại", story: "Câu chuyện", process: "Quy trình", activity: "Hoạt động", workshop: "Đặt lịch workshop", workshopHint: "Chọn ngày, giờ và nghệ nhân để hẹn làm workshop", tap: "Chạm vào nghệ nhân để lắng nghe", signBtn: "Ký hiệu", quiz: "Làm bài kiểm tra", done: "Hoạt động hoàn thành!", quizHint: "Bạn đã sẵn sàng làm bài kiểm tra để nhận phần thưởng", artisan: "Nghệ nhân", speak: "Nghe", stop: "Dừng", confirmBooking: "Xác nhận lịch hẹn", cancelBooking: "Hủy", guestCount: "Số khách", note: "Ghi chú", selectedArtisans: "Chọn nghệ nhân", date: "Ngày", time: "Giờ", bookingSuccess: "Đã gửi yêu cầu đặt lịch", bookingSuccessHint: "Chúng tôi sẽ liên hệ để xác nhận workshop với các nghệ nhân bạn đã chọn.", singleArtisanNote: "Làng này hiện chỉ có 1 nghệ nhân trong dữ liệu mẫu." },
-        en: { back: "Back", story: "Story", process: "Process", activity: "Activity", workshop: "Book workshop", workshopHint: "Choose a date, time, and artisan(s) for a craft workshop", tap: "Tap the artisan to listen", signBtn: "Sign", quiz: "Take Quiz", done: "Activity complete!", quizHint: "You are ready to take the quiz for your reward", artisan: "Master Artisan", speak: "Listen", stop: "Stop", confirmBooking: "Confirm booking", cancelBooking: "Cancel", guestCount: "Guests", note: "Note", selectedArtisans: "Select artisan(s)", date: "Date", time: "Time", bookingSuccess: "Booking request sent", bookingSuccessHint: "We will contact you to confirm the workshop with the artisan(s) you selected.", singleArtisanNote: "This village currently has only one artisan." },
-        sign: { back: "⬅️", story: "📖 Câu chuyện", process: "⚙️ Quy trình", activity: "🎨 Hoạt động", workshop: "📅 Đặt lịch", workshopHint: "🗓️ Chọn ngày giờ và nghệ nhân", tap: "👆 Chạm nghệ nhân", signBtn: "🤟 ON", quiz: "📝 Kiểm tra", done: "✅ Xong!", quizHint: "📝 Làm bài kiểm tra", artisan: "👤 Nghệ nhân", speak: "🔊 Nghe", stop: "⏹ Dừng", confirmBooking: "✅ Xác nhận", cancelBooking: "Hủy", guestCount: "👥 Khách", note: "📝 Ghi chú", selectedArtisans: "👤 Nghệ nhân", date: "📅 Ngày", time: "⏰ Giờ", bookingSuccess: "✅ Đã gửi yêu cầu", bookingSuccessHint: "Chúng tôi sẽ liên hệ xác nhận workshop.", singleArtisanNote: "📌 Dữ liệu mẫu mới có 1 nghệ nhân." },
-    };
-    const copy = t[language];
+    // Ép kiểu language đảm bảo lấy đúng từ khóa
+    const currentLang = (language === "vi" || language === "en" || language === "sign") ? language : "vi";
+    const copy = t[currentLang];
 
     return (
         <div className="min-h-screen" style={{ fontFamily: "'Be Vietnam Pro', sans-serif", background: "var(--background)" }}>
+            {scene.audioUrl && (
+                <audio
+                    ref={audioRef}
+                    src={scene.audioUrl}
+                    preload="none"
+                    onEnded={() => { setIsSpeaking(false); setCurrentCaptionText(""); }}
+                    onTimeUpdate={(e) => {
+                        const time = e.currentTarget.currentTime;
+                        const captions = scene.captions || [];
+                        let text = "";
+                        for (const c of captions) {
+                            if (time >= c.time) text = c.text;
+                        }
+                        setCurrentCaptionText(text);
+                    }}
+                />
+            )}
+
             <header className="relative py-5 px-4 shadow-lg" style={{ background: "linear-gradient(135deg, #1A0800 0%, #5A1A00 60%, #8B3010 100%)" }}>
                 <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 gap-2" onClick={() => router.push("/home")}>
@@ -314,10 +263,27 @@ export default function VillageTour() {
                     {scene.particles.map((e, i) => <FloatingParticle key={i} emoji={e} index={i} />)}
                 </div>
 
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20" style={{ width: "180px", height: "280px" }}>
-                    {showBubble && (
+                {/* Panel phụ đề bên trái */}
+                {canUseRealAudio && isSpeaking && currentCaptionText && (
+                    <div className="absolute inset-y-0 right-0 z-20 flex items-center pointer-events-none" style={{ width: "50%", paddingLeft: "6%" }}>
+                        <motion.p
+                            key={currentCaptionText}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="px-6 md:px-10 text-white text-lg md:text-2xl leading-relaxed"
+                            style={{ fontFamily: "'Lora', serif", textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
+                        >
+                            {currentCaptionText}
+                        </motion.p>
+                    </div>
+                )}
+
+                {/* Nhân vật */}
+                <div className="absolute bottom-0 z-20" style={{ width: "460px", maxWidth: "94%", height: "520px", left: "42%", transform: "translateX(-50%)" }}>
+                    {!canUseRealAudio && showBubble && (
                         <motion.div initial={{ opacity: 0, y: 10, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.25 }}
-                                    className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 rounded-2xl shadow-2xl z-30 ${isSign ? "bg-gray-950 text-white border-2 border-green-500" : "bg-white text-gray-900"}`}
+                                    className={`absolute bottom-full mb-4 left-0 rounded-2xl shadow-2xl z-30 ${isSign ? "bg-gray-950 text-white border-2 border-green-500" : "bg-white text-gray-900"}`}
                                     style={{ minWidth: "270px", maxWidth: "310px" }}>
                             <div className="p-4">
                                 <div className="flex items-center gap-2 mb-3">
@@ -349,7 +315,15 @@ export default function VillageTour() {
                     <motion.div onClick={handleArtisanClick} className="cursor-pointer w-full h-full"
                                 animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                        <ArtisanSVG villageId={villageId} clothingColor={scene.clothingColor} />
+                        {scene.standingImageUrl ? (
+                            <img
+                                src={scene.standingImageUrl}
+                                alt={village.artisan.name}
+                                className="w-full h-full object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
+                            />
+                        ) : (
+                            <ArtisanSVG villageId={villageId} clothingColor={scene.clothingColor} />
+                        )}
                     </motion.div>
                 </div>
 
@@ -364,32 +338,39 @@ export default function VillageTour() {
                 )}
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-stretch">
                     <div className="flex flex-1 gap-1 bg-black/5 p-1 rounded-xl">
-                        {(["story", "process", "activity"] as const).map((tab) => {
-                            const icons = { story: BookOpen, process: Workflow, activity: Palette };
-                            const labels = { story: copy.story, process: copy.process, activity: copy.activity };
+                        {(["story", "experience"] as const).map((tab) => {
+                            const icons = { story: BookOpen, experience: Palette };
+                            const labels = { story: copy.story, experience: "Trải nghiệm" };
                             const Icon = icons[tab];
                             return (
                                 <button key={tab} onClick={() => setActiveTab(tab)}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === tab ? "bg-white shadow text-amber-900" : "text-gray-500 hover:text-gray-800"}`}>
                                     <Icon className="w-4 h-4" />
                                     <span>{labels[tab]}</span>
-                                    {tab === "activity" && isActivityDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                                    {tab === "experience" && isActivityDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
                                 </button>
                             );
                         })}
                     </div>
-                    <button onClick={openBookingModal}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-900/15 bg-white px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md lg:min-w-[220px]">
-                        <CalendarDays className="w-4 h-4" />
-                        <span>{copy.workshop}</span>
-                    </button>
+             <div className="flex gap-3">
+                        <button onClick={() => setIsItineraryOpen(true)}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-600 bg-green-50 px-5 py-3 text-sm font-bold text-green-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-green-100">
+                            <Map className="w-4 h-4" />
+                            <span>Xem Lộ Trình</span>
+                        </button>
+                        <button onClick={openBookingModal}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-900/15 bg-white px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                            <CalendarDays className="w-4 h-4" />
+                            <span>{copy.workshop}</span>
+                        </button>
+                    </div>
                 </div>
 
                 {activeTab === "story" && (
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
                         <div className="rounded-2xl overflow-hidden mb-6 border" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
                             <div className="px-6 py-5 flex items-center gap-4" style={{ background: `${scene.clothingColor}18` }}>
                                 <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-white"
@@ -416,76 +397,232 @@ export default function VillageTour() {
                     </motion.div>
                 )}
 
-                {activeTab === "process" && (
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <div className="rounded-2xl p-6 border" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-                            <h3 className="text-xl font-bold mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>{village.process.title[lang]}</h3>
-                            <div className="space-y-4">
-                                {village.process.steps[lang].map((step, i) => (
-                                    <motion.div key={i} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
-                                                className="flex items-start gap-4 p-4 rounded-xl" style={{ background: `${scene.clothingColor}12`, border: `1px solid ${scene.clothingColor}25` }}>
-                                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: scene.clothingColor }}>{i + 1}</div>
-                                        <p className="text-base pt-1 leading-snug" style={{ fontFamily: "'Lora', serif" }}>{step}</p>
-                                    </motion.div>
+                {activeTab === "experience" && (
+                    <ExperienceTab
+                        village={village}
+                        villageId={villageId}
+                        lang={lang}
+                        copy={copy}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                        isActivityDone={isActivityDone}
+                        sceneColor={scene.clothingColor}
+                    />
+                )}
+                {activeTab === "itinerary" && (
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} 
+                                className="w-full bg-[#FDFBF7] rounded-3xl p-6 md:p-8 shadow-sm border border-amber-900/10 relative overflow-hidden mt-6">
+                        
+                        <div className="text-center mb-10 relative z-10">
+                            <h3 className="text-2xl md:text-3xl font-bold text-green-800 inline-block px-8 py-2 rounded-full bg-green-100 border-2 border-green-700" 
+                                style={{ fontFamily: "'Playfair Display', serif" }}>
+                                LỘ TRÌNH CHI TIẾT
+                            </h3>
+                            <p className="mt-3 text-amber-900 font-medium">🕒 7h30 - 11h30 | Hành trình 4 tiếng trải nghiệm</p>
+                        </div>
+
+                        {/* Khung Scroll ngang cho Timeline */}
+                        <div className="relative w-full overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar">
+                            <div className="absolute top-[28px] left-8 right-8 h-1 bg-amber-900/20 rounded-full hidden md:block"></div>
+                            
+                            <div className="flex gap-4 min-w-max px-4">
+                                {ITINERARY_STEPS.map((step, idx) => (
+                                    <div key={idx} className="w-[280px] snap-center shrink-0 relative flex flex-col pt-12 md:pt-0">
+                                        
+                                        <div className="hidden md:flex absolute top-[12px] left-1/2 -translate-x-1/2 z-10 items-center justify-center w-8 h-8 rounded-full border-4 border-[#FDFBF7]"
+                                             style={{ backgroundColor: step.headerColor.replace('bg-', '') }}>
+                                        </div>
+
+                                        <div className={`mt-4 rounded-2xl overflow-hidden border border-black/5 shadow-sm h-full flex flex-col bg-white transition-transform hover:-translate-y-1`}>
+                                            <div className={`${step.headerColor} p-3 flex items-center justify-center gap-2 relative`}>
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center bg-[inherit]">
+                                                    {step.icon}
+                                                </div>
+                                                <span className="text-white font-bold text-lg mt-3">{step.time}</span>
+                                            </div>
+                                            
+                                            <div className={`${step.color} p-5 flex-1 flex flex-col gap-2 rounded-b-2xl`}>
+                                                <h4 className={`text-lg font-bold text-center ${step.textColor}`}>{step.title}</h4>
+                                                <div className="w-8 h-0.5 bg-black/10 mx-auto rounded-full my-1"></div>
+                                                <p className={`text-sm leading-relaxed text-justify ${step.textColor}/80 mt-1`}>
+                                                    • {step.desc}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     </motion.div>
                 )}
+            </div>
+{isItineraryOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm overflow-y-auto">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}
+                                className="w-full max-w-[1400px] my-auto bg-[#FDFBF7] rounded-3xl p-6 md:p-10 shadow-2xl relative">
+                        
+                        <button onClick={() => setIsItineraryOpen(false)} className="absolute top-4 right-4 md:top-6 md:right-6 rounded-full bg-black/5 p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 transition-colors z-20">
+                            <X className="h-6 w-6" />
+                        </button>
 
-                {activeTab === "activity" && (
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <div className="rounded-2xl p-6 border mb-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-                            <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>{village.activity.title[lang]}</h3>
-                            <p className="mb-6 text-stone-600" style={{ fontFamily: "'Lora', serif" }}>{village.activity.description[lang]}</p>
-                            {renderActivity()}
+                        <div className="text-center mb-8 relative z-10">
+                            <h3 className="text-3xl md:text-4xl font-bold text-green-800 inline-block px-10 py-3 rounded-full bg-green-100 border-2 border-green-700" 
+                                style={{ fontFamily: "'Playfair Display', serif" }}>
+                                LỘ TRÌNH CHI TIẾT
+                            </h3>
+                            <p className="mt-4 text-amber-900/80 font-bold text-lg">🕒 7h30 - 11h30 | Hành trình 4 tiếng trải nghiệm</p>
                         </div>
-                        {isActivityDone && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl p-6 border-2 border-green-500 bg-green-50">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <CheckCircle2 className="w-8 h-8 text-green-600" />
-                                    <div>
-                                        <h4 className="text-lg font-bold text-green-900">{copy.done}</h4>
-                                        <p className="text-green-700 text-sm">{copy.quizHint}</p>
+
+                        {/* Layout Dàn đều 5 cột ngang - KHÔNG SCROLL */}
+                        <div className="relative grid grid-cols-1 lg:grid-cols-5 gap-6 mt-12">
+                            {/* Đường chỉ đỏ/nâu chạy ngang phía sau (Chỉ hiện trên PC) */}
+                            <div className="hidden lg:block absolute top-[16px] left-[10%] right-[10%] h-[3px] bg-amber-900/15 rounded-full z-0"></div>
+                            
+                            {ITINERARY_STEPS.map((step, idx) => (
+                                <div key={idx} className="relative flex flex-col pt-10 lg:pt-0 group">
+                                    {/* Cục mốc thời gian */}
+                                    <div className="hidden lg:flex absolute top-[0px] left-1/2 -translate-x-1/2 z-10 items-center justify-center w-9 h-9 rounded-full border-4 border-[#FDFBF7] group-hover:scale-125 transition-transform"
+                                         style={{ backgroundColor: step.headerColor.replace('bg-', '') }}>
+                                    </div>
+
+                               {/* Thẻ Card */}
+                                    <div className={`mt-5 rounded-2xl border border-black/5 shadow-md h-full flex flex-col bg-white transition-all hover:-translate-y-2 hover:shadow-xl`}>
+                                        <div className={`${step.headerColor} p-4 flex flex-col items-center justify-center gap-1 relative rounded-t-2xl`}>
+                                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full border-[5px] border-white flex items-center justify-center bg-[inherit] shadow-sm">
+                                                {step.icon}
+                                            </div>
+                                            <span className="text-white font-black text-xl mt-4">{step.time}</span>
+                                        </div>
+                                        
+                                        <div className={`${step.color} p-6 flex-1 flex flex-col gap-3 rounded-b-2xl`}>
+                                            <h4 className={`text-xl font-bold text-center ${step.textColor}`}>{step.title}</h4>
+                                            <div className="w-12 h-1 bg-black/10 mx-auto rounded-full"></div>
+                                            <p className={`text-base leading-relaxed text-justify ${step.textColor}/90 mt-2 font-medium`}>
+                                                • {step.desc}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                                <Button onClick={() => router.push(`/quiz/${villageId}`)} className="w-full py-6 text-white font-semibold rounded-xl"
-                                        style={{ background: "linear-gradient(135deg, #1A7A30, #2AAA50)" }}>
-                                    {copy.quiz} →
-                                </Button>
-                            </motion.div>
-                        )}
-                    </motion.div>
-                )}
-            </div>
+       ))}
+                        </div>
 
+                        {/* Nút Đặt lịch CTA (Call to Action) */}
+                        <div className="mt-12 mb-2 flex justify-center relative z-10">
+                            <button onClick={() => { setIsItineraryOpen(false); openBookingModal(); }} 
+                                    className="px-10 py-4 rounded-full text-lg font-bold text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center gap-3"
+                                    style={{ background: "linear-gradient(135deg, #c2410c, #9a3412)" }}>
+                                <CalendarDays className="w-6 h-6" />
+                                Liên hệ đặt lịch
+                            </button>
+                        </div>
+
+                    </motion.div>
+                </div>
+            )}
             {isBookingOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-8 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm overflow-y-auto">
                     <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.2 }}
-                                className="w-full max-w-2xl overflow-hidden rounded-3xl bg-[#FBF5E8] shadow-2xl">
-                        <div className="flex items-start justify-between gap-4 border-b border-amber-900/10 bg-gradient-to-r from-amber-100 to-orange-50 px-6 py-5">
-                            <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Workshop</p>
-                                <h3 className="text-2xl font-bold text-amber-950">{copy.workshop}</h3>
-                                <p className="mt-1 text-sm text-amber-800/80">{copy.workshopHint}</p>
+                                className="w-full max-w-3xl my-auto overflow-hidden rounded-2xl bg-[#FBF8F1] shadow-2xl border border-amber-900/10 relative">
+
+                        {/* HEADER - Phong cách mộc mạc */}
+                        <div className="flex items-start justify-between gap-4 border-b border-amber-900/10 bg-[#F4EBE1] px-8 py-6 relative overflow-hidden">
+                            <div className="relative z-10">
+                                <h3 className="text-2xl font-bold text-amber-950" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                    Liên hệ đặt lịch trải nghiệm
+                                </h3>
+                                <p className="mt-1 text-sm text-amber-800">
+                                    Điền thông tin để nghệ nhân chuẩn bị không gian và nguyên liệu tốt nhất cho bạn.
+                                </p>
                             </div>
-                            <button onClick={() => setIsBookingOpen(false)} className="rounded-full bg-white/80 p-2 text-amber-900 transition-colors hover:bg-white">
+                            <button onClick={() => setIsBookingOpen(false)} className="relative z-10 rounded-full bg-white/50 p-2 text-amber-900 transition-colors hover:bg-white hover:text-red-600">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
-                        <div className="p-6">
-                            <div className="space-y-4">
-                                <p className="text-sm text-amber-900">{copy.singleArtisanNote}</p>
-                                <div className="flex justify-end gap-3">
-                                    <button onClick={() => setIsBookingOpen(false)} className="rounded-2xl border border-amber-900/15 px-5 py-3 text-sm font-semibold text-amber-950">
-                                        {copy.cancelBooking}
-                                    </button>
-                                    <Button onClick={() => setBookingConfirmed(true)} className="rounded-2xl px-5 py-3 text-sm font-semibold text-white"
-                                            style={{ background: "linear-gradient(135deg, #8B1A00, #C07A25)" }}>
-                                        {copy.confirmBooking}
+
+                        {/* BODY FORM - Chia 2 cột giống hình ảnh thiết kế */}
+                        <div className="p-8">
+                            {!bookingConfirmed ? (
+                                <div className="space-y-6">
+
+                                    {/* Hàng 1: Họ tên + Email */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-amber-950">Họ và tên <span className="text-red-500">*</span></label>
+                                            <input type="text" placeholder="Nguyễn Văn A"
+                                                   className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 placeholder:text-amber-900/40 shadow-sm" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-amber-950">Email <span className="text-red-500">*</span></label>
+                                            <input type="email" placeholder="email@domain.com"
+                                                   className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 placeholder:text-amber-900/40 shadow-sm" />
+                                        </div>
+                                    </div>
+
+                                    {/* Hàng 2: SĐT + Tổ chức/Số lượng */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-amber-950">Số điện thoại</label>
+                                            <input type="tel" placeholder="+84 xxx xxx xxx"
+                                                   className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 placeholder:text-amber-900/40 shadow-sm" />
+                                        </div>
+                                <div className="space-y-2">
+                                            <label className="text-sm font-bold text-amber-950">Ngày dự kiến đến <span className="text-red-500">*</span></label>
+                                            <input type="date" 
+                                                   value={bookingDate}
+                                                   onChange={(e) => setBookingDate(e.target.value)}
+                                                   className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 shadow-sm" />
+                                        </div>
+                                    </div>
+
+                                    {/* Hàng 3: Dropdown Làng nghề */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-amber-950">Địa điểm quan tâm</label>
+                                        <div className="relative">
+                                            {/* Tự động lấy tên làng hiện tại làm mặc định, nếu không có thì lấy Làng Tranh Sình */}
+                                            <select defaultValue={village?.name?.vi || "Làng Tranh Sình"}
+                                                    className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 appearance-none cursor-pointer shadow-sm">
+                                                <option value="Làng Tranh Sình">Làng Tranh Sình</option>
+                                                <option value="Hoa Giấy Thanh Tiên">Hoa Giấy Thanh Tiên</option>
+                                                <option value="Làng Hương Thủy Xuân">Làng Hương Thủy Xuân</option>
+                                                <option value="Làng Nón Lá Huế">Làng Nón Lá Huế</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-900/50 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    {/* Hàng 4: Textarea Ghi chú */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-amber-950">Ghi chú thêm</label>
+                                        <textarea rows={4} placeholder="Chia sẻ thêm về nhu cầu của bạn (ngày giờ dự kiến đến, yêu cầu đặc biệt)..."
+                                                  className="w-full px-4 py-3 rounded-xl border border-amber-900/20 bg-white focus:outline-none focus:ring-2 focus:ring-amber-700/30 focus:border-amber-700 transition-all text-amber-950 placeholder:text-amber-900/40 resize-none shadow-sm"></textarea>
+                                    </div>
+
+                                    {/* Nút bấm Gửi */}
+                    <div className="pt-4">
+                                        <Button onClick={handleConfirmBooking}
+                                                className="w-fit px-8 py-6 rounded-full text-base font-semibold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-3"
+                                                style={{ background: "linear-gradient(135deg, #c2410c, #9a3412)" }}>
+                                            Gửi yêu cầu đặt lịch <ArrowRight className="w-5 h-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* Giao diện sau khi gửi thành công */
+                                <div className="py-12 flex flex-col items-center text-center">
+                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                                        <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                    </motion.div>
+                                    <h4 className="text-2xl font-bold text-amber-950 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                        Đã gửi yêu cầu thành công!
+                                    </h4>
+                                    <p className="text-amber-800 max-w-md leading-relaxed">
+                                        Cảm ơn bạn đã quan tâm. Thông tin của bạn đã được chuyển đến nghệ nhân. Chúng tôi sẽ sớm liên hệ qua Số điện thoại / Email để xác nhận lịch hẹn chi tiết.
+                                    </p>
+                                    <Button onClick={() => setIsBookingOpen(false)} className="mt-8 px-8 py-6 rounded-full border border-amber-900/20 bg-white text-amber-950 hover:bg-amber-50 hover:text-amber-900 font-semibold shadow-sm transition-colors">
+                                        Đóng cửa sổ
                                     </Button>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </motion.div>
                 </div>

@@ -55,9 +55,9 @@ export default function Navbar({ currentPage }: NavbarProps) {
   return (
     <header className="fixed top-0 inset-x-0 z-50 w-full px-4 sm:px-8 lg:px-12 pt-4 pb-2 transition-all pointer-events-none">
       <div className="max-w-7xl mx-auto rounded-2xl bg-[#120703]/95 backdrop-blur-2xl border border-amber-500/30 shadow-[0_10px_35px_rgba(0,0,0,0.85)] px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4 pointer-events-auto">
-        {/* Brand Logo & Title */}
+        {/* Brand Logo & Title -> Trỏ thẳng về /home */}
         <div
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/home')}
           className="flex items-center gap-3 cursor-pointer group shrink-0"
         >
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 flex items-center justify-center text-stone-950 font-bold shadow-lg shadow-amber-500/20 border border-amber-300/50 group-hover:scale-105 transition-all">
@@ -83,17 +83,8 @@ export default function Navbar({ currentPage }: NavbarProps) {
 
         {/* Center Nav Links (Desktop) */}
         <nav className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-950/80 border border-white/10 backdrop-blur-md shadow-inner">
-          <button
-            onClick={() => router.push('/')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              activePage === 'landing'
-                ? 'text-amber-300 bg-amber-500/20 border border-amber-500/40 shadow-sm'
-                : 'text-stone-300 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            {currentLang === 'en' ? 'Welcome' : 'Trang Chủ'}
-          </button>
-
+          
+          {/* Nút Trang Chủ chính (Thay cho 8 Làng Nghề) */}
           <button
             onClick={() => router.push('/home')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -102,7 +93,7 @@ export default function Navbar({ currentPage }: NavbarProps) {
                 : 'text-stone-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <span>{currentLang === 'en' ? '8 Craft Villages' : '8 Làng Nghề'}</span>
+            <span>{currentLang === 'en' ? 'Home' : 'Trang Chủ'}</span>
             {completedCount > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-400 text-stone-950">
                 {completedCount}/8
@@ -110,6 +101,7 @@ export default function Navbar({ currentPage }: NavbarProps) {
             )}
           </button>
 
+          {/* Bản Đồ 360° */}
           <button
             onClick={() => router.push('/map')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -122,6 +114,7 @@ export default function Navbar({ currentPage }: NavbarProps) {
             <span>{currentLang === 'en' ? '360° Map' : 'Bản Đồ 360°'}</span>
           </button>
 
+          {/* Phần Thưởng */}
           <button
             onClick={() => router.push('/rewards')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${

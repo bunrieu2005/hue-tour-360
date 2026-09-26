@@ -1,0 +1,41 @@
+{
+  "landing": {
+    "eyebrow": "🤟 Di sản Văn hóa Huế • Trực quan hóa",
+    "hero_title_1": "Khám Phá Di Sản",
+    "hero_title_2": "& Bản Đồ 360°",
+    "hero_subtitle": "Hành trình trực quan số qua 8 làng nghề truyền thống và chế độ xem phố 360 độ trực quan, sinh động.",
+    "cta_street_view": "🧭 Bản Đồ 360° Street View",
+    "cta_explore_villages": "🏮 Xem Các Làng Nghề",
+    "preview_badge": "Khám Phá Ngay",
+    "preview_title": "Xem Phố 360° Trực Quan",
+    "preview_desc": "Xem phố 360 độ, di chuyển tới lui và chạm vào các hiện vật làng nghề.",
+    "try_street_view": "Mở bản đồ",
+    "stat_villages": "8 Làng Nghề",
+    "stat_villages_desc": "Nghề cổ truyền",
+    "stat_street_view": "Bản Đồ 360°",
+    "stat_street_view_desc": "Ảnh góc rộng",
+    "stat_interactive": "Thực Hành Ảo",
+    "stat_interactive_desc": "Tự tay làm thử",
+    "stat_rewards": "Phần Thưởng",
+    "stat_rewards_desc": "Quà lưu niệm",
+    "section_villages_title": "Làng Nghề Tiêu Biểu",
+    "section_villages_subtitle": "Tìm hiểu những làng nghề danh tiếng nhất của Cố đô Huế",
+    "view_all_villages": "Xem tất cả",
+    "pillar_title": "Trải Nghiệm Nổi Bật",
+    "pillar_1_title": "Thực Hành Nghề Thủ Công",
+    "pillar_1_desc": "Tương tác vẽ tranh, làm hoa giấy và làm hương trực quan trên màn hình.",
+    "pillar_2_title": "Xem Phố 360° Toàn Cảnh",
+    "pillar_2_desc": "Dạo quanh các góc phố Huế bằng góc nhìn 360 độ bao quát.",
+    "pillar_3_title": "Thử Thách Nhận Quà",
+    "pillar_3_desc": "Trả lời câu hỏi trắc nghiệm để nhận quà tặng du lịch ý nghĩa.",
+    "footer_text": "Dự án Di sản Văn hóa Huế • Trải nghiệm số thân thiện và dễ tiếp cận"
+  },
+  "navbar": {
+    "brand_title": "TOUR HUẾ",
+    "brand_subtitle": "Di Sản & Làng Nghề Cố Đô",
+    "welcome": "Trang Chủ",
+    "craft_villages": "8 Làng Nghề",
+    "map_360": "Bản Đồ 360°",
+    "rewards": "Phần Thưởng"
+  }
+}

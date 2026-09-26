@@ -1,94 +1,132 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface VillageProgress {
-  [villageId: string]: {
-    completed: boolean;
-    quizScore?: number;
-    activityCompleted: boolean;
-  };
-}
+// Khai báo các trạng thái của Vé đặt lịch
+export type BookingStatus = 'pending' | 'completed' | 'claimed';
 
-interface UnlockedRewards {
-  [rewardId: string]: boolean;
+export interface Booking {
+    id: string;
+    villageId: string;
+    villageName: string;
+    date: string;
+    status: BookingStatus;
+    timestamp: number;
 }
 
 interface ProgressContextType {
-  villageProgress: VillageProgress;
-  unlockedRewards: UnlockedRewards;
-  completeActivity: (villageId: string) => void;
-  completeQuiz: (villageId: string, score: number) => void;
-  unlockReward: (rewardId: string) => void;
-  isVillageCompleted: (villageId: string) => boolean;
-  getCompletedVillagesCount: () => number;
+    completedVillages: string[];
+    unlockedRewards: Record<string, boolean>;
+    coins: number; // TỔNG XU HIỆN CÓ
+    bookings: Booking[]; // DANH SÁCH VÉ
+    addCoins: (amount: number) => void;
+    deductCoins: (amount: number) => boolean;
+    addBooking: (villageId: string, villageName: string, date: string) => void;
+    updateBookingStatus: (id: string, status: BookingStatus) => void;
+    unlockReward: (rewardId: string) => void;
+    getCompletedVillagesCount: () => number;
+    markVillageComplete: (villageId: string) => void;
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
 
-export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [villageProgress, setVillageProgress] = useState<VillageProgress>({});
-  const [unlockedRewards, setUnlockedRewards] = useState<UnlockedRewards>({});
+export function ProgressProvider({ children }: { children: React.ReactNode }) {
+    const [completedVillages, setCompletedVillages] = useState<string[]>([]);
+    const [unlockedRewards, setUnlockedRewards] = useState<Record<string, boolean>>({});
+    const [coins, setCoins] = useState<number>(0);
+    const [bookings, setBookings] = useState<Booking[]>([]);
 
-  const completeActivity = (villageId: string) => {
-    setVillageProgress(prev => ({
-      ...prev,
-      [villageId]: {
-        ...prev[villageId],
-        activityCompleted: true,
-        completed: prev[villageId]?.quizScore ? prev[villageId].quizScore! >= 3 : false
-      }
-    }));
-  };
+    // Tải dữ liệu từ LocalStorage khi khởi chạy
+    useEffect(() => {
+        try {
+            const savedVillages = localStorage.getItem('completedVillages');
+            const savedRewards = localStorage.getItem('unlockedRewards');
+            const savedCoins = localStorage.getItem('userCoins');
+            const savedBookings = localStorage.getItem('userBookings');
 
-  const completeQuiz = (villageId: string, score: number) => {
-    setVillageProgress(prev => ({
-      ...prev,
-      [villageId]: {
-        ...prev[villageId],
-        quizScore: score,
-        activityCompleted: prev[villageId]?.activityCompleted || false,
-        completed: score >= 3 && (prev[villageId]?.activityCompleted || false)
-      }
-    }));
-  };
+            if (savedVillages) setCompletedVillages(JSON.parse(savedVillages));
+            if (savedRewards) setUnlockedRewards(JSON.parse(savedRewards));
+            if (savedCoins) setCoins(JSON.parse(savedCoins));
+            if (savedBookings) setBookings(JSON.parse(savedBookings));
+        } catch (error) {
+            console.error("Failed to load progress from localStorage", error);
+        }
+    }, []);
 
-  const unlockReward = (rewardId: string) => {
-    setUnlockedRewards(prev => ({
-      ...prev,
-      [rewardId]: true
-    }));
-  };
+    // Lưu dữ liệu vào LocalStorage mỗi khi có thay đổi
+    useEffect(() => {
+        localStorage.setItem('completedVillages', JSON.stringify(completedVillages));
+        localStorage.setItem('unlockedRewards', JSON.stringify(unlockedRewards));
+        localStorage.setItem('userCoins', JSON.stringify(coins));
+        localStorage.setItem('userBookings', JSON.stringify(bookings));
+    }, [completedVillages, unlockedRewards, coins, bookings]);
 
-  const isVillageCompleted = (villageId: string) => {
-    return villageProgress[villageId]?.completed || false;
-  };
+    /* --- LOGIC XỬ LÝ XU --- */
+    const addCoins = (amount: number) => {
+        setCoins(prev => prev + amount);
+    };
 
-  const getCompletedVillagesCount = () => {
-    return Object.values(villageProgress).filter(p => p.completed).length;
-  };
+    const deductCoins = (amount: number) => {
+        if (coins >= amount) {
+            setCoins(prev => prev - amount);
+            return true; // Trừ thành công (để mua voucher)
+        }
+        return false; // Không đủ xu
+    };
 
-  return (
-    <ProgressContext.Provider
-      value={{
-        villageProgress,
-        unlockedRewards,
-        completeActivity,
-        completeQuiz,
-        unlockReward,
-        isVillageCompleted,
-        getCompletedVillagesCount
-      }}
-    >
-      {children}
-    </ProgressContext.Provider>
-  );
-};
+    /* --- LOGIC XỬ LÝ VÉ ĐẶT LỊCH --- */
+    const addBooking = (villageId: string, villageName: string, date: string) => {
+        const newBooking: Booking = {
+            id: `booking-${Date.now()}`,
+            villageId,
+            villageName,
+            date,
+            status: 'pending', // Mặc định là chờ trải nghiệm
+            timestamp: Date.now()
+        };
+        setBookings(prev => [newBooking, ...prev]);
+    };
 
-export const useProgress = () => {
-  const context = useContext(ProgressContext);
-  if (!context) {
-    throw new Error('useProgress must be used within a ProgressProvider');
-  }
-  return context;
-};
+    const updateBookingStatus = (id: string, status: BookingStatus) => {
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+    };
+
+    /* --- LOGIC LÀNG NGHỀ & PHẦN THƯỞNG CŨ --- */
+    const unlockReward = (rewardId: string) => {
+        setUnlockedRewards(prev => ({ ...prev, [rewardId]: true }));
+    };
+
+    const getCompletedVillagesCount = () => completedVillages.length;
+
+    const markVillageComplete = (villageId: string) => {
+        if (!completedVillages.includes(villageId)) {
+            setCompletedVillages(prev => [...prev, villageId]);
+        }
+    };
+
+    return (
+        <ProgressContext.Provider value={{
+            completedVillages,
+            unlockedRewards,
+            coins,
+            bookings,
+            addCoins,
+            deductCoins,
+            addBooking,
+            updateBookingStatus,
+            unlockReward,
+            getCompletedVillagesCount,
+            markVillageComplete
+        }}>
+            {children}
+        </ProgressContext.Provider>
+    );
+}
+
+export function useProgress() {
+    const context = useContext(ProgressContext);
+    if (context === undefined) {
+        throw new Error('useProgress must be used within a ProgressProvider');
+    }
+    return context;
+}

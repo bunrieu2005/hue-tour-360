@@ -150,7 +150,7 @@ const VILLAGE_METADATA: Record<
 export default function Home() {
     const router = useRouter();
     const { language } = useLanguage();
-    const { villageProgress, getCompletedVillagesCount, unlockedRewards } = useProgress();
+const { completedVillages, getCompletedVillagesCount, unlockedRewards } = useProgress();
 
     const [selectedCategory, setSelectedCategory] = useState<'all' | 'unesco' | 'royal' | 'folk'>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -221,7 +221,7 @@ export default function Home() {
             tab_royal: 'Xưởng Hoàng Cung',
             tab_folk: 'Dân Gian Xứ Huế',
             search_placeholder: 'Tìm tên làng nghề, nghệ nhân hoặc sản phẩm...',
-            btn_start: 'Bắt đầu làm nghề',
+            btn_start: 'Tìm hiểu làng nghề',
             btn_revisit: 'Xem lại làng nghề',
             btn_detail: 'Tìm hiểu lịch sử & nghệ nhân',
             activity_done: 'Đã thực hành',
@@ -381,14 +381,12 @@ export default function Home() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                         {filteredVillages.map((village, index) => {
-                            const prog = villageProgress[village.id];
-                            const isCompleted = prog?.completed || false;
-                            const hasActivity = prog?.activityCompleted || false;
+                     const isCompleted = (completedVillages || []).includes(village.id);
                             const meta = VILLAGE_METADATA[village.id] || VILLAGE_METADATA['sinh-painting'];
                             const imgUrl = VILLAGE_IMAGES[village.id] || village.image;
 
                             return (
-                                <motion.div key={village.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * index, duration: 0.5 }} className="group relative flex flex-col rounded-3xl overflow-hidden border border-white/10 hover:border-amber-500/40 bg-gradient-to-b from-stone-900/90 to-[#120703]/95 shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+                            <motion.div key={village.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * index, duration: 0.5 }} className="group relative flex flex-col rounded-3xl overflow-hidden border border-white/10 hover:border-amber-500/40 bg-gradient-to-b from-stone-900/90 to-[#120703]/95 shadow-xl hover:-translate-y-1.5 transition-all duration-300">
                                     <div className="relative h-52 overflow-hidden bg-stone-950">
                                         <img src={imgUrl} alt={village.name[langKey]} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                         <div className="absolute inset-0" style={{ background: `linear-gradient(to top, #120703 0%, ${meta.gradientFrom}70 50%, transparent 100%)` }} />

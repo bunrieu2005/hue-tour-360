@@ -1,0 +1,41 @@
+{
+  "landing": {
+    "eyebrow": "Di sản Văn hóa Phi vật thể • Cố đô Huế",
+    "hero_title_1": "Hành Trình Di Sản",
+    "hero_title_2": "& Khám Phá 360°",
+    "hero_subtitle": "Cổng thông tin văn hóa số đưa bạn khám phá 8 làng nghề truyền thống hơn 400 năm lịch sử và dạo bước thực tế ảo sống động qua từng góc phố Cố đô Huế.",
+    "cta_street_view": "Dạo Bước 360° Street View",
+    "cta_explore_villages": "Khám Phá Làng Nghề",
+    "preview_badge": "Trải Nghiệm Mới",
+    "preview_title": "Chế Độ Xem Phố 360° Độc Bản",
+    "preview_desc": "Di chuyển tới lui, xoay toàn cảnh 360 độ, khám phá hiện vật và bản đồ mini tương tác thời gian thực.",
+    "try_street_view": "Khám phá ngay",
+    "stat_villages": "8 Làng nghề",
+    "stat_villages_desc": "Di sản 400+ năm",
+    "stat_street_view": "Xem Phố 360°",
+    "stat_street_view_desc": "Hình ảnh sắc nét HD",
+    "stat_interactive": "100% Tương tác",
+    "stat_interactive_desc": "Tự tay làm nghề ảo",
+    "stat_rewards": "Quà lưu niệm",
+    "stat_rewards_desc": "Đổi voucher du lịch",
+    "section_villages_title": "Tuyến Làng Nghề Nổi Bật",
+    "section_villages_subtitle": "Gặp gỡ các bậc nghệ nhân lão thành và tìm hiểu bí quyết thủ công ngàn năm",
+    "view_all_villages": "Xem tất cả làng nghề",
+    "pillar_title": "Trải Nghiệm Văn Hóa Khác Biệt",
+    "pillar_1_title": "Tự Tay Làm Nghề Thủ Công",
+    "pillar_1_desc": "Tương tác mô phỏng từng công đoạn: tô màu tranh Sình, gấp hoa giấy, se hương trầm ngay trên màn hình.",
+    "pillar_2_title": "Dạo Phố 360° Như Thực Địa",
+    "pillar_2_desc": "Hệ thống Street View giúp bạn lướt qua các ngõ phố Cố đô, xem radar camera và nhảy điểm trên bản đồ.",
+    "pillar_3_title": "Hỏi Đáp & Nhận Quà Thật",
+    "pillar_3_desc": "Tham gia câu đố văn hóa sau mỗi làng nghề để nhận mã giảm giá lưu niệm, homestay và ẩm thực tại Huế.",
+    "footer_text": "Dự án số hóa Di sản Văn hóa phi vật thể Cố đô Huế • Bảo tồn & Phát huy truyền thống Việt Nam"
+  },
+  "navbar": {
+    "brand_title": "TOUR HUẾ",
+    "brand_subtitle": "Di Sản & Làng Nghề Cố Đô",
+    "welcome": "Trang Chủ",
+    "craft_villages": "8 Làng Nghề",
+    "map_360": "Bản Đồ 360°",
+    "rewards": "Phần Thưởng"
+  }
+}

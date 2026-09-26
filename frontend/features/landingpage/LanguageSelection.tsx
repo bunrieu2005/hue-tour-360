@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage, Language } from '@/context/LanguageContext';
+import { useTranslation } from '@/locales';
+import { LANG_OPTIONS } from '@/constants/languages';
 import { motion } from 'motion/react';
 import Navbar from '@/components/Navbar';
 import {
@@ -24,27 +26,6 @@ import {
   Gift,
   ExternalLink,
 } from 'lucide-react';
-
-const LANG_OPTIONS = [
-  {
-    code: 'vi' as Language,
-    shortLabel: 'VI',
-    label: 'Tiếng Việt',
-    sub: 'Tiếng Việt',
-  },
-  {
-    code: 'en' as Language,
-    shortLabel: 'EN',
-    label: 'English',
-    sub: 'English',
-  },
-  {
-    code: 'sign' as Language,
-    shortLabel: 'Ký hiệu',
-    label: 'Ngôn ngữ ký hiệu',
-    sub: 'Sign Language',
-  },
-];
 
 const FEATURED_VILLAGES = [
   {

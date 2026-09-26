@@ -1,149 +1,204 @@
 'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { motion } from "motion/react";
-import { Palette, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface PaintingActivityProps {
-  onComplete: () => void;
+export interface PaintingActivityProps {
+    currentStep?: number;
+    onStepChange?: (step: number) => void;
+    onComplete: () => void;
 }
 
-export default function PaintingActivity({ onComplete }: PaintingActivityProps) {
-  const [selectedColor, setSelectedColor] = useState("#FF6B6B");
-  const [paintedAreas, setPaintedAreas] = useState<{ [key: number]: string }>({});
-  const [isCompleted, setIsCompleted] = useState(false);
+export default function PaintingActivity({ currentStep = 0, onStepChange, onComplete }: PaintingActivityProps) {
+    const [woodblockState, setWoodblockState] = useState<'raw' | 'inked' | 'covered'>('raw');
+    const [paperState, setPaperState] = useState<'stack' | 'placed' | 'printed'>('stack');
+    const [activeTool, setActiveTool] = useState<'none' | 'ink-brush' | 'color-brush' | 'paper'>('none');
 
-  const colors = [
-    { name: "Đỏ", color: "#FF6B6B" },
-    { name: "Vàng", color: "#FFD93D" },
-    { name: "Xanh lá", color: "#6BCF7F" },
-    { name: "Xanh dương", color: "#4D96FF" },
-    { name: "Tím", color: "#A78BFA" },
-    { name: "Cam", color: "#FF9F43" },
-    { name: "Nâu", color: "#8B4513" },
-    { name: "Hồng", color: "#FFB6C1" }
-  ];
+    const [gameStage, setGameStage] = useState(0);
+    const [rubCount, setRubCount] = useState(0);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Define painting areas (simplified painting template)
-  const paintingAreas = [
-    { id: 1, x: 10, y: 10, width: 30, height: 30, label: "Mặt trời" },
-    { id: 2, x: 50, y: 15, width: 40, height: 25, label: "Mây" },
-    { id: 3, x: 15, y: 50, width: 25, height: 35, label: "Cây" },
-    { id: 4, x: 45, y: 55, width: 30, height: 30, label: "Nhà" },
-    { id: 5, x: 10, y: 90, width: 80, height: 10, label: "Đất" },
-    { id: 6, x: 75, y: 60, width: 15, height: 25, label: "Hoa" }
-  ];
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, []);
 
-  const handlePaint = (areaId: number) => {
-    setPaintedAreas(prev => ({
-      ...prev,
-      [areaId]: selectedColor
-    }));
-  };
+    const handleSelectTool = (tool: 'ink-brush' | 'color-brush' | 'paper') => {
+        if (tool === 'ink-brush' && gameStage === 0) setActiveTool(tool);
+        if (tool === 'paper' && gameStage === 1) setActiveTool(tool);
+        if (tool === 'color-brush' && gameStage === 3) setActiveTool(tool);
+    };
 
-  const handleComplete = () => {
-    setIsCompleted(true);
-    onComplete();
-  };
+    const handleWoodblockClick = () => {
+        if (activeTool === 'ink-brush' && woodblockState === 'raw') {
+            setWoodblockState('inked');
+            setActiveTool('none');
+            setGameStage(1);
+            if (onStepChange) onStepChange(2);
+        }
+        else if (activeTool === 'paper' && woodblockState === 'inked') {
+            setWoodblockState('covered');
+            setPaperState('placed');
+            setActiveTool('none');
+            setGameStage(2);
+        }
+    };
 
-  const handleReset = () => {
-    setPaintedAreas({});
-    setIsCompleted(false);
-  };
+    const handleRubbing = () => {
+        if (gameStage === 2 && paperState === 'placed') {
+            const newCount = rubCount + 1;
+            setRubCount(newCount);
+            if (newCount >= 3) {
+                setPaperState('printed');
+                setGameStage(3);
+                if (onStepChange) onStepChange(4);
+            }
+        }
+    };
 
-  const paintedCount = Object.keys(paintedAreas).length;
-  const progress = (paintedCount / paintingAreas.length) * 100;
+    const handlePaintingClick = () => {
+        if (activeTool === 'color-brush' && paperState === 'printed') {
+            setActiveTool('none');
+            setGameStage(4);
+            if (onStepChange) onStepChange(5);
+            setTimeout(() => {
+                onComplete();
+            }, 1000);
+        }
+    };
 
-  return (
-    <div className="space-y-6">
-      {/* Color Palette */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg">
-        <div className="flex items-center gap-2 mb-4">
-          <Palette className="w-6 h-6 text-purple-600" />
-          <h4 className="text-xl font-semibold text-gray-800">Bảng màu / Color Palette</h4>
+    const getCursorImage = () => {
+        if (activeTool === 'ink-brush') return "/game/game-langsinh/co-ve-de-nhung-muc-dichuyen.png";
+        if (activeTool === 'color-brush') return "/game/game-langsinh/co-ve-de-to-mau-dichuyen.png";
+        if (activeTool === 'paper') return "/game/game-langsinh/buctranh-trang.png";
+        return null;
+    };
+
+    return (
+        <div className={`relative w-full h-full min-h-[700px] bg-[#d7c4b1] flex flex-col items-center p-8 select-none rounded-xl overflow-hidden ${activeTool !== 'none' ? 'cursor-none' : 'cursor-default'}`}
+             style={{
+                 backgroundImage: 'radial-gradient(#a38c75 1.5px, transparent 1.5px)',
+                 backgroundSize: '30px 30px'
+             }}>
+
+            {activeTool !== 'none' && (
+                <div className="fixed pointer-events-none z-50 transition-transform duration-75"
+                     style={{
+                         left: mousePos.x,
+                         top: mousePos.y,
+                         transform: 'translate(-20%, -80%)'
+                     }}>
+                    <img src={getCursorImage()!} alt="tool" className="w-40 h-40 object-contain drop-shadow-2xl" />
+                </div>
+            )}
+
+            <div className="absolute top-6 left-0 right-0 text-center z-10 pointer-events-none">
+                <div className="inline-block bg-black/75 text-white px-8 py-4 rounded-full text-lg md:text-xl font-bold backdrop-blur-md shadow-2xl tracking-wide border border-white/20">
+                    {gameStage === 0 && "1. Nhấn bát mực lấy cọ ➔ Quét mực lên mộc bản"}
+                    {gameStage === 1 && "2. Nhấn lấy giấy trắng ➔ Đặt lên mộc bản"}
+                    {gameStage === 2 && `Vuốt mạnh để giấy thấm mực (click chuột) (${rubCount}/3)`}
+                    {gameStage === 3 && "3.Lấy cọ màu để tô bức tranh thôi nào"}
+                    {gameStage === 4 && "✨ Tuyệt vời! Bức tranh đã hoàn thiện ✨"}
+                </div>
+            </div>
+
+            <div className="flex-1 w-full flex items-center justify-center gap-16 md:gap-24 mt-16">
+
+                <div className="flex flex-col gap-12 items-center z-20">
+                    <motion.div
+                        whileHover={gameStage === 0 ? { scale: 1.05 } : {}}
+                        whileTap={gameStage === 0 ? { scale: 0.95 } : {}}
+                        onClick={() => handleSelectTool('ink-brush')}
+                        className={`relative w-40 h-40 flex items-center justify-center transition-all ${gameStage === 0 ? 'cursor-pointer drop-shadow-2xl' : 'opacity-40 grayscale cursor-not-allowed'}`}>
+                        <img src="/game/game-langsinh/muc-nhung-moc-ban.png" alt="Bát mực" className="w-full h-full object-contain" />
+                        {activeTool === 'ink-brush' && <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">Đang cầm</div>}
+                    </motion.div>
+
+                    <motion.div
+                        whileHover={gameStage === 1 ? { scale: 1.05 } : {}}
+                        whileTap={gameStage === 1 ? { scale: 0.95 } : {}}
+                        onClick={() => handleSelectTool('paper')}
+                        className={`relative w-36 h-48 flex items-center justify-center transition-all ${gameStage === 1 ? 'cursor-pointer drop-shadow-2xl' : 'opacity-40 cursor-not-allowed'}`}>
+                        <img src="/game/game-langsinh/buctranh-trang.png" alt="Giấy bản" className="w-full h-full object-contain" />
+                        {activeTool === 'paper' && <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">Đang cầm</div>}
+                    </motion.div>
+
+                    <motion.div
+                        whileHover={gameStage === 3 ? { scale: 1.05 } : {}}
+                        whileTap={gameStage === 3 ? { scale: 0.95 } : {}}
+                        onClick={() => handleSelectTool('color-brush')}
+                        className={`relative w-36 h-48 flex items-center justify-center transition-all ${gameStage === 3 ? 'cursor-pointer drop-shadow-2xl' : 'opacity-40 grayscale cursor-not-allowed'}`}>
+                        <img src="/game/game-langsinh/hop-dung-co-ve.png" alt="Ống bút màu" className="w-full h-full object-contain" />
+                        {activeTool === 'color-brush' && <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">Đang cầm</div>}
+                    </motion.div>
+                </div>
+
+                <div className="relative flex items-center justify-center w-[500px] h-[600px] z-10">
+                    <AnimatePresence mode="wait">
+                        {/* TRẠNG THÁI 1: MỘC BẢN & VUỐT GIẤY */}
+                        {gameStage < 3 && (
+                            <motion.div
+                                key="woodblock"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                onClick={gameStage === 2 ? handleRubbing : handleWoodblockClick}
+                                whileTap={gameStage === 2 ? { scale: 0.96 } : {}}
+                                className={`w-[400px] h-[550px] relative transition-all duration-300 flex items-center justify-center ${(activeTool === 'ink-brush' || activeTool === 'paper' || gameStage === 2) ? 'cursor-pointer ring-8 ring-amber-400/50 rounded-2xl bg-black/5' : ''}`}>
+
+                                {/* Ảnh mộc bản */}
+                                <img
+                                    src={woodblockState === 'raw' ? "/game/game-langsinh/moc-ban-chua-to-mau.png" : "/game/game-langsinh/moc-ban-da-nhung-muc.png"}
+                                    alt="Mộc bản"
+                                    className="absolute inset-0 w-full h-full object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.6)] p-6"
+                                />
+
+                                {/* Tờ giấy đắp lên ghi đè hoàn toàn (Hiện ra khi Stage 2) */}
+                                {gameStage === 2 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 1.1 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="absolute inset-0 z-10 p-2"
+                                    >
+                                        <img
+                                            src="/game/game-langsinh/buctranh-trang.png"
+                                            alt="Giấy đang phủ"
+                                            className="w-full h-full object-contain drop-shadow-2xl"
+                                        />
+
+                                        {/* Nét in đen từ từ hiện ra mỗi lần vuốt */}
+                                        <img
+                                            src="/game/game-langsinh/buc-tranh-khi-da-nhung.png"
+                                            alt="Nét in mờ"
+                                            className="absolute inset-0 w-full h-full object-contain p-2 transition-opacity duration-300"
+                                            style={{ opacity: rubCount * 0.3 }}
+                                        />
+                                    </motion.div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* TRẠNG THÁI 2: BỨC TRANH ĐÃ IN XONG VÀ TÔ MÀU */}
+                        {gameStage >= 3 && (
+                            <motion.div
+                                key="painting"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                onClick={handlePaintingClick}
+                                className={`w-[450px] transition-all duration-500 ${activeTool === 'color-brush' ? 'cursor-pointer ring-8 ring-amber-400/50 rounded-md' : ''}`}>
+                                <img
+                                    src={gameStage === 4 ? "/game/game-langsinh/buc-tranh-khi-da-to-mau.png" : "/game/game-langsinh/buc-tranh-khi-da-nhung.png"}
+                                    alt="Bức tranh"
+                                    className="w-full h-full object-contain shadow-[0_25px_50px_rgba(0,0,0,0.5)] bg-[#f5efe6]"
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
         </div>
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-          {colors.map((c) => (
-            <button
-              key={c.color}
-              onClick={() => setSelectedColor(c.color)}
-              className={`w-full aspect-square rounded-lg transition-all ${
-                selectedColor === c.color
-                  ? 'ring-4 ring-offset-2 ring-purple-500 scale-110'
-                  : 'hover:scale-105'
-              }`}
-              style={{ backgroundColor: c.color }}
-              title={c.name}
-            />
-          ))}
-        </div>
-        <p className="mt-3 text-sm text-gray-600">
-          Màu đã chọn: <span className="font-semibold" style={{ color: selectedColor }}>{selectedColor}</span>
-        </p>
-      </div>
-
-      {/* Canvas */}
-      <div className="bg-white p-6 rounded-lg border-2 border-amber-200">
-        <div className="aspect-video relative bg-gradient-to-b from-blue-100 to-green-100 rounded-lg overflow-hidden border-4 border-amber-400">
-          {paintingAreas.map((area) => (
-            <motion.button
-              key={area.id}
-              onClick={() => handlePaint(area.id)}
-              className="absolute border-2 border-dashed border-gray-400 hover:border-amber-600 transition-all cursor-pointer group"
-              style={{
-                left: `${area.x}%`,
-                top: `${area.y}%`,
-                width: `${area.width}%`,
-                height: `${area.height}%`,
-                backgroundColor: paintedAreas[area.id] || 'transparent'
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700 group-hover:text-amber-900 opacity-50 group-hover:opacity-100">
-                {!paintedAreas[area.id] && area.label}
-              </span>
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Progress */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Tiến độ: {paintedCount}/{paintingAreas.length}</span>
-            <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <motion.div
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-4">
-        <Button
-          onClick={handleReset}
-          variant="outline"
-          className="flex-1 gap-2"
-          disabled={paintedCount === 0}
-        >
-          <RefreshCw className="w-5 h-5" />
-          Làm lại / Reset
-        </Button>
-        <Button
-          onClick={handleComplete}
-          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-          disabled={isCompleted || paintedCount < 3}
-        >
-          {isCompleted ? '✓ Đã hoàn thành' : 'Hoàn thành / Complete'}
-        </Button>
-      </div>
-    </div>
-  );
+    );
 }

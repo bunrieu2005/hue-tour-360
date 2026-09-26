@@ -1,0 +1,41 @@
+{
+  "landing": {
+    "eyebrow": "UNESCO Intangible Cultural Heritage • Hue Ancient Capital",
+    "hero_title_1": "Imperial Heritage",
+    "hero_title_2": "& 360° VR Journey",
+    "hero_subtitle": "Digital cultural gateway exploring 8 traditional craft villages with 400+ years of history and immersive 360° Street View through the ancient streets of Hue.",
+    "cta_street_view": "Explore 360° Street View",
+    "cta_explore_villages": "Discover Craft Villages",
+    "preview_badge": "New Experience",
+    "preview_title": "Immersive 360° Street View",
+    "preview_desc": "Walk forward and backward, pan 360 degrees, inspect hotspots and real-time interactive mini-map.",
+    "try_street_view": "Launch 360 View",
+    "stat_villages": "8 Villages",
+    "stat_villages_desc": "400+ years history",
+    "stat_street_view": "360° Street View",
+    "stat_street_view_desc": "Crystal HD panoramas",
+    "stat_interactive": "100% Interactive",
+    "stat_interactive_desc": "Virtual crafting tools",
+    "stat_rewards": "Travel Rewards",
+    "stat_rewards_desc": "Real discounts & vouchers",
+    "section_villages_title": "Featured Craft Villages",
+    "section_villages_subtitle": "Meet master artisans and uncover centuries of royal craft secrets",
+    "view_all_villages": "View All Craft Villages",
+    "pillar_title": "A Truly Immersive Cultural Journey",
+    "pillar_1_title": "Hands-on Virtual Crafting",
+    "pillar_1_desc": "Simulate authentic crafting steps: block-printing Sinh paintings, folding paper lotuses, rolling incense.",
+    "pillar_2_title": "Authentic 360° Street View",
+    "pillar_2_desc": "Walk down the cobblestone streets of Hue with dynamic camera vision cone and interactive waypoint pins.",
+    "pillar_3_title": "Quizzes & Real Rewards",
+    "pillar_3_desc": "Complete cultural quizzes to earn vouchers for local homestays, boat trips, and dining in Hue.",
+    "footer_text": "Hue Cultural Heritage Digital Preservation Project • Preserving & Celebrating Vietnamese Tradition"
+  },
+  "navbar": {
+    "brand_title": "TOUR HUẾ",
+    "brand_subtitle": "Di Sản & Làng Nghề Cố Đô",
+    "welcome": "Welcome",
+    "craft_villages": "8 Craft Villages",
+    "map_360": "360° Map",
+    "rewards": "Rewards"
+  }
+}
