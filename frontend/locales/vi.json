@@ -37,5 +37,21 @@
     "craft_villages": "8 Làng Nghề",
     "map_360": "Bản Đồ 360°",
     "rewards": "Phần Thưởng"
+  },
+  "map": {
+    "button": "Bản đồ",
+    "coming_soon": "Sắp ra mắt",
+    "coming_soon_sign": "Bản đồ sắp ra mắt 🗺️",
+    "page_navigation": "Điều hướng bản đồ",
+    "back": "Quay lại",
+    "home": "Trang chủ",
+    "frame_title": "Bản đồ mô phỏng tương tác",
+    "loading": "Đang tải bản đồ…",
+    "error": "Không thể tải bản đồ. Vui lòng kiểm tra kết nối rồi thử lại.",
+    "webgl_error": "Trình duyệt hiện không thể khởi tạo đồ họa 3D cho bản đồ.",
+    "webgl_error_description": "Bản đồ cần WebGL. Hãy bật tăng tốc phần cứng trong cài đặt trình duyệt rồi khởi động lại, hoặc mở trang bằng trình duyệt/thiết bị hỗ trợ WebGL.",
+    "retry": "Thử tải lại",
+    "developing": "Bản đồ đang được phát triển",
+    "developing_description": "Bản đồ mô phỏng cho làng nghề này sẽ sớm có mặt."
   }
 }

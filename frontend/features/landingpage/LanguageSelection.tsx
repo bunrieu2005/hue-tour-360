@@ -7,6 +7,7 @@ import { useProgress } from '@/context/ProgressContext';
 import { motion } from 'motion/react';
 import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
+import VillageMapButton from '@/components/VillageMapButton';
 
 import { villages } from '@/data/villages';
 import {
@@ -1112,7 +1113,7 @@ export default function LanguageSelection() {
 
                                                 <div className="space-y-2 mt-auto">
 
-                                                    <div className="flex flex-col sm:flex-row gap-2">
+                                                    <div className="flex flex-wrap gap-2">
 
                                                         {/* DETAIL */}
 
@@ -1127,7 +1128,7 @@ export default function LanguageSelection() {
                                                                     ? `Xem lại làng nghề ${village.name[langKey]}`
                                                                     : `Bắt đầu tìm hiểu làng nghề ${village.name[langKey]}`
                                                             }
-                                                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs text-white shadow-md cursor-pointer transition-all hover:brightness-110"
+                                                            className="flex min-h-11 flex-1 min-w-[45%] xl:min-w-0 items-center justify-center gap-2 rounded-xl px-2 py-3 text-center font-bold text-xs text-white shadow-md cursor-pointer transition-all hover:brightness-110"
                                                             style={{
                                                                 background:
                                                                     `linear-gradient(135deg, ${meta.gradientFrom}, ${meta.gradientTo})`,
@@ -1165,7 +1166,7 @@ export default function LanguageSelection() {
                                                                 );
                                                             }}
                                                             aria-label={`Khám phá thực tế ảo 360 độ làng ${village.name[langKey]}`}
-                                                            className="flex-1 py-2.5 bg-stone-900 text-amber-400 border border-amber-500/50 rounded-xl font-bold text-xs hover:bg-stone-800 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                                                            className="flex min-h-11 flex-1 min-w-[45%] xl:min-w-0 items-center justify-center gap-2 rounded-xl border border-amber-500/50 bg-stone-900 px-2 py-2.5 text-center font-bold text-xs text-amber-400 shadow-lg transition-colors hover:bg-stone-800 cursor-pointer"
                                                         >
 
                                                             <Compass
@@ -1173,13 +1174,18 @@ export default function LanguageSelection() {
                                                                 className="w-4 h-4"
                                                             />
 
-                                                            <span>
+                                                            <span className="leading-tight">
                                                                 {
                                                                     copy.btn_360
                                                                 }
                                                             </span>
 
                                                         </button>
+
+                                                        <VillageMapButton
+                                                            villageId={village.id}
+                                                            villageName={village.name[langKey]}
+                                                        />
 
                                                     </div>
 

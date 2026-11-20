@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Bản Đồ 3D Làng Sình – Tranh Dân Gian & Hội Vật Huế</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #fbf4e2;
+      --cream-dark: #efe2c2;
+      --gold: #f3dc9a;
+      --gold-deep: #d49b27;
+      --brown: #4a2e1b;
+      --brown-soft: #785236;
+      --olive: #7a8f4b;
+      --river: #2f6f8f;
+      --shadow: 0 10px 28px rgba(42, 26, 12, 0.22);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body, #app {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: 'Be Vietnam Pro', 'Nunito', sans-serif;
+      background: #232c1d; color: var(--brown);
+    }
+
+    /* Loading screen */
+    #loading-screen {
+      position: fixed; inset: 0; z-index: 999;
+      background: linear-gradient(155deg, #2d4329 0%, #4b5d2e 55%, #8c6b36 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--cream); transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-title { font-family: 'Nunito', sans-serif; font-size: clamp(1.5rem, 4vw, 2.3rem); font-weight: 800; margin-bottom: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+    .loader-sub { font-size: 0.92rem; opacity: 0.9; margin-bottom: 22px; }
+    .progress-wrap { width: min(340px, 80vw); height: 12px; background: rgba(255,255,255,0.2); border-radius: 99px; overflow: hidden; border: 2px solid var(--gold); }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), #ffae34); transition: width 0.25s ease; }
+    .progress-text { margin-top: 10px; font-size: 0.85rem; font-weight: 600; color: var(--gold); }
+
+    /* Labels CSS2D */
+    .lm-label {
+      background: var(--cream);
+      color: #5c3712;
+      border: 2px solid #fff7df;
+      box-shadow: 0 0 0 2px var(--gold-deep), 0 6px 14px rgba(0,0,0,0.25);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      transform: translate(-50%, -100%);
+      transition: transform 0.15s ease, opacity 0.25s ease;
+      pointer-events: auto;
+      user-select: none;
+    }
+    .lm-label:hover { transform: translate(-50%, -108%) scale(1.05); }
+    .lm-label.lod-hidden { opacity: 0; pointer-events: none; }
+
+    .road-label {
+      color: #4f5249;
+      font-size: 10px;
+      font-weight: 700;
+      text-shadow: -1px -1px 0 rgba(251,244,226,0.9), 1px -1px 0 rgba(251,244,226,0.9), -1px 1px 0 rgba(251,244,226,0.9), 1px 1px 0 rgba(251,244,226,0.9);
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.25s ease;
+    }
+    .road-label.lod-hidden { opacity: 0; }
+
+    .hotspot-bubble {
+      width: 34px; height: 38px;
+      background: var(--gold);
+      border: 3px solid var(--gold-deep);
+      border-radius: 50% 50% 50% 18%;
+      transform: translate(-50%, -115%) rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 14px rgba(42, 26, 12, 0.35);
+      cursor: pointer;
+      pointer-events: auto;
+      animation: bobbing 2.2s ease-in-out infinite;
+    }
+    .hotspot-bubble span {
+      transform: rotate(45deg);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--brown);
+    }
+    .hotspot-bubble.solved {
+      background: #8fd175;
+      border-color: #3d8b28;
+    }
+    @keyframes bobbing {
+      0%, 100% { transform: translate(-50%, -115%) rotate(-45deg); }
+      50% { transform: translate(-50%, -132%) rotate(-45deg); }
+    }
+
+    /* HUD */
+    .hud-top {
+      position: fixed; top: 12px; left: 12px; right: 12px; z-index: 20;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .hud-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; pointer-events: auto; }
+
+    .btn-hud {
+      background: var(--cream); color: var(--brown);
+      border: 2px solid var(--gold-deep); border-radius: 14px;
+      padding: 8px 12px; font-size: 12.5px; font-weight: 700;
+      cursor: pointer; box-shadow: var(--shadow);
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+    .btn-hud:hover { background: var(--cream-dark); transform: translateY(-1px); }
+    .btn-hud.active { background: var(--gold); box-shadow: inset 0 2px 4px rgba(0,0,0,0.12); }
+
+    .search-box {
+      position: relative; display: flex; align-items: center;
+    }
+    .search-input {
+      background: var(--cream); color: var(--brown);
+      border: 2px solid var(--gold-deep); border-radius: 14px;
+      padding: 8px 12px; font-size: 12.5px; width: 195px;
+      outline: none; box-shadow: var(--shadow);
+    }
+    .search-results {
+      position: absolute; top: 42px; left: 0; right: 0;
+      background: var(--cream); border: 2px solid var(--gold-deep);
+      border-radius: 12px; box-shadow: var(--shadow); display: none; overflow: hidden;
+    }
+    .search-results.open { display: block; }
+    .search-item { padding: 8px 12px; font-size: 12px; cursor: pointer; border-bottom: 1px solid var(--cream-dark); }
+    .search-item:hover { background: var(--gold); }
+
+    /* Pill boat button */
+    #boat-pill {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 25;
+      background: linear-gradient(180deg, #ffe58f, var(--gold));
+      color: var(--brown); border: 2.5px solid var(--gold-deep);
+      border-radius: 999px; padding: 10px 18px;
+      font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13.5px;
+      box-shadow: 0 8px 22px rgba(31, 78, 102, 0.4);
+      cursor: pointer; display: none; align-items: center; gap: 8px;
+    }
+    #boat-pill.visible { display: inline-flex; }
+
+    /* Mini-map */
+    #minimap {
+      position: fixed; bottom: 16px; right: 16px; z-index: 20;
+      width: 124px; height: 124px; border-radius: 18px;
+      background: rgba(122, 143, 75, 0.9);
+      border: 3px solid var(--cream); box-shadow: var(--shadow);
+      overflow: hidden; cursor: pointer;
+    }
+    #minimap canvas { width: 100%; height: 100%; display: block; }
+
+    /* Cards counter */
+    #cards-badge {
+      position: fixed; bottom: 16px; left: 16px; z-index: 20;
+      background: var(--cream); border: 2px solid var(--gold-deep);
+      border-radius: 14px; padding: 8px 12px; font-size: 12px; font-weight: 700;
+      box-shadow: var(--shadow); cursor: pointer;
+    }
+
+    /* Quiz & Mini-game Modal */
+    #modal-backdrop {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(24, 18, 10, 0.55); backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    #modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: min(540px, 100%); max-height: 88vh; overflow-y: auto;
+      background: var(--cream); border: 3px solid var(--gold-deep);
+      border-radius: 22px; padding: 20px; box-shadow: var(--shadow);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .modal-tag { display: inline-block; background: var(--gold); padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+    .modal-title { font-family: 'Nunito', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--brown); }
+    .btn-close { background: var(--cream-dark); border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; cursor: pointer; color: var(--brown); }
+    .modal-story { font-size: 0.92rem; line-height: 1.58; color: var(--brown-soft); margin-bottom: 14px; }
+
+    .quiz-q { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; }
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .quiz-opt {
+      text-align: left; background: #fffdf7; border: 2px solid #dec99a;
+      border-radius: 12px; padding: 10px 12px; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; color: var(--brown); transition: all 0.14s ease;
+    }
+    .quiz-opt:hover { border-color: var(--gold-deep); background: #fff5d6; }
+    .quiz-opt.correct { background: #c8f2ba; border-color: #3d8b28; }
+    .quiz-opt.wrong { background: #ffd1c9; border-color: #c93b2b; }
+
+    /* Mini-games */
+    .minigame-box {
+      background: #fff9ea; border: 2px dashed var(--gold-deep);
+      border-radius: 16px; padding: 14px; margin-top: 12px;
+    }
+    .minigame-title { font-weight: 800; font-size: 0.92rem; margin-bottom: 6px; }
+    .print-canvas-wrap { position: relative; width: 100%; height: 170px; border-radius: 12px; overflow: hidden; background: #e8dec5; touch-action: none; }
+    .print-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+
+    .wrestle-track { position: relative; width: 100%; height: 28px; background: #e8dec5; border-radius: 999px; overflow: hidden; margin: 10px 0; border: 2px solid var(--brown-soft); }
+    .wrestle-zone { position: absolute; top: 0; bottom: 0; left: 38%; width: 24%; background: rgba(61, 139, 40, 0.35); border-left: 2px solid #3d8b28; border-right: 2px solid #3d8b28; }
+    .wrestle-marker { position: absolute; top: 2px; bottom: 2px; width: 14px; border-radius: 999px; background: #d93829; left: 0%; }
+
+    .reward-card {
+      margin-top: 14px; padding: 14px; border-radius: 16px;
+      background: linear-gradient(135deg, #fff4cf, #f7dc94);
+      border: 2px solid var(--gold-deep); display: none;
+    }
+    .reward-card.unlocked { display: block; }
+
+    @media (max-width: 640px) {
+      .search-input { width: 140px; }
+      #minimap { width: 96px; height: 96px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="loader-title">LÀNG SÌNH 3D – LẠI ÂN, HUẾ</div>
+    <div class="loader-sub">Đang dựng sa bàn tranh dân gian &amp; hội vật mùng 10...</div>
+    <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="progress-text" id="progress-text">0%</div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud-top">
+    <div class="hud-group">
+      <div class="search-box">
+        <input id="search-input" class="search-input" type="text" placeholder="Tìm địa danh, đường..." autocomplete="off" />
+        <div id="search-results" class="search-results"></div>
+      </div>
+      <button class="btn-hud" id="btn-toggle-lights" title="Bật/tắt đèn">💡 Đèn</button>
+      <button class="btn-hud active" id="btn-toggle-labels" title="Bật/tắt nhãn">🏷️ Nhãn</button>
+      <button class="btn-hud active" id="btn-toggle-ads" title="Bật/tắt biển quảng cáo">🪧 Ads</button>
+    </div>
+    <div class="hud-group">
+      <button class="btn-hud" id="btn-daynight">🌙 Đêm</button>
+      <button class="btn-hud" id="btn-festival">🏮 Hội vật</button>
+      <button class="btn-hud" id="btn-reset-cam">🎯 Reset</button>
+    </div>
+  </div>
+
+  <button id="boat-pill">⛵ Lên đò dọc sông Hương</button>
+  <div id="cards-badge" title="Xem thẻ sưu tầm đã mở khóa">🃏 Thẻ: <span id="cards-count">0</span>/5</div>
+  <div id="minimap"><canvas id="minimap-canvas" width="124" height="124"></canvas></div>
+
+  <!-- Modal Quiz & Mini-game -->
+  <div id="modal-backdrop">
+    <div class="modal-card" id="modal-card"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three@0.169.0",
+    "three/addons/": "https://esm.sh/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+const mapApp = document.getElementById('app');
+mapApp.dataset.mapStatus = 'loading';
+
+function showMapError(error) {
+  console.error('Failed to initialize the 3D village map:', error);
+  const isWebGLFailure = /webgl|context/i.test(String(error));
+  mapApp.dataset.mapStatus = isWebGLFailure ? 'webgl-error' : 'error';
+
+  const loadingScreen = document.getElementById('loading-screen');
+  loadingScreen.querySelector('.loader-title').textContent = isWebGLFailure
+    ? 'Không thể khởi tạo bản đồ 3D'
+    : 'Không thể tải bản đồ';
+  loadingScreen.querySelector('.loader-sub').textContent = isWebGLFailure
+    ? 'Trình duyệt hoặc môi trường hiện tại không cấp WebGL. Hãy bật tăng tốc phần cứng hoặc mở bản đồ bằng trình duyệt hỗ trợ WebGL.'
+    : 'Đã xảy ra lỗi khi khởi tạo bản đồ. Vui lòng tải lại trang.';
+  loadingScreen.querySelector('.progress-wrap').hidden = true;
+  loadingScreen.querySelector('.progress-text').hidden = true;
+}
+
+try {
+// ============================================================================
+// 1. CẤU HÌNH MÀU SẮC, ÁNH SÁNG & TỌA ĐỘ GỐC (DỄ TINH CHỈNH)
+// ============================================================================
+const CONFIG = {
+  originLat: 16.4658,
+  originLng: 107.6598,
+  worldSize: 1500,
+  maxPixelRatio: 2,
+  colors: {
+    groundOlive: 0x7a8f4b,
+    groundBorder: 0x5b6c34,
+    sandBank: 0xe6d5a7,
+    waterShallow: 0x2f6f8f,
+    waterDeep: 0x1f4e66,
+    riceGold: 0xc9b873,
+    riceGreen: 0xa8b365,
+    riceBund: 0xdccfa0,
+    roadSurface: 0xd9d9cf,
+    roadEdge: 0xb8b8ac,
+    roofRed: 0xc85a32,
+    roofGray: 0x8a929a,
+    roofBeige: 0xd8c39e,
+    wallCream: 0xf4ebd9,
+    woodBrown: 0x5e3a24,
+    treeDark: 0x3b5e2b,
+    treeMid: 0x4f7736,
+    warmLight: 0xffd27a,
+    lanternRed: 0xe63926,
+    highlightGold: 0xffcf40,
+    signBlue: 0x1e6fa8,
+  },
+  lighting: {
+    sunsetSunColor: 0xffa94d,
+    sunsetSunIntensity: 2.3,
+    sunsetHemiSky: 0x9ec5d6,
+    sunsetHemiGround: 0x5e4934,
+    sunsetFog: 0xd8d7a8,
+
+    nightSunColor: 0x5677c4,
+    nightSunIntensity: 0.55,
+    nightHemiSky: 0x1e2d4d,
+    nightHemiGround: 0x181c14,
+    nightFog: 0x172336,
+  }
+};
+
+// ============================================================================
+// 2. DỮ LIỆU GEOJSON & JSON (CÓ THỂ ĐỔI SANG LÀNG KHÁC)
+// ============================================================================
+const DATA = {
+  water: {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { name: 'Sông Hương' },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [107.6520, 16.4725],
+          [107.6655, 16.4725],
+          [107.6620, 16.4702],
+          [107.6578, 16.4682],
+          [107.6552, 16.4658],
+          [107.6534, 16.4622],
+          [107.6520, 16.4590],
+          [107.6520, 16.4725]
+        ]]
+      }
+    }]
+  },
+  roads: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { name: 'Đường Ven Sông Hương', width: 7 },
+        geometry: { type: 'LineString', coordinates: [[107.6538, 16.4600], [107.6556, 16.4652], [107.6582, 16.4678], [107.6625, 16.4698], [107.6660, 16.4712]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Liên thôn Triêm Ân – Lại Ân', width: 8.5 },
+        geometry: { type: 'LineString', coordinates: [[107.6545, 16.4602], [107.6562, 16.4625], [107.6585, 16.4642], [107.6598, 16.4658], [107.6618, 16.4660], [107.6665, 16.4658]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Đường 2', width: 9.5 },
+        geometry: { type: 'LineString', coordinates: [[107.6584, 16.4592], [107.6592, 16.4628], [107.6598, 16.4658], [107.6592, 16.4684]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Đường Làng Sình', width: 5.5 },
+        geometry: { type: 'LineString', coordinates: [[107.6598, 16.4658], [107.6616, 16.4665], [107.6615, 16.4694]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Xóm 8', width: 4.2 },
+        geometry: { type: 'LineString', coordinates: [[107.6536, 16.4632], [107.6558, 16.4620], [107.6572, 16.4633]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Xóm 9', width: 4.2 },
+        geometry: { type: 'LineString', coordinates: [[107.6532, 16.4616], [107.6552, 16.4608]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Đường Sân Vật', width: 5 },
+        geometry: { type: 'LineString', coordinates: [[107.6568, 16.4664], [107.6588, 16.4654], [107.6598, 16.4658]] }
+      }
+    ]
+  },
+  landmarks: [
+    { id: 'church', name: 'Nhà thờ Lại Ân', lat: 16.4688, lng: 107.6593, kind: 'church' },
+    { id: 'workshop', name: 'Tranh Dân Gian Làng Sình Mộc Huy', lat: 16.4665, lng: 107.6616, kind: 'workshop' },
+    { id: 'arena', name: 'Sân vật làng Sình', lat: 16.4655, lng: 107.6587, kind: 'arena' },
+    { id: 'pier', name: 'Bến sông Hương', lat: 16.4679, lng: 107.6579, kind: 'pier' },
+    { id: 'rice', name: 'Đồng lúa Lại Ân', lat: 16.4624, lng: 107.6626, kind: 'rice' }
+  ],
+  ads: [
+    {
+      id: 'ad-sinh',
+      title: 'Tranh Làng Sình – Mộc Huy',
+      subtitle: 'Giấy điệp & màu tự nhiên Huế',
+      url: '#workshop',
+      lat: 16.4656,
+      lng: 107.6606,
+      rotY: -0.2
+    },
+    {
+      id: 'ad-hue',
+      title: 'Du Lịch Làng Cổ Lại Ân',
+      subtitle: 'Hội vật mùng 10 & sông Hương',
+      url: '#arena',
+      lat: 16.4638,
+      lng: 107.6595,
+      rotY: 0.35
+    }
+  ],
+  quiz: {
+    church: {
+      tag: 'Di sản & Kiến trúc',
+      title: 'Nhà thờ Lại Ân',
+      story: 'Nằm ven sông Hương trong vùng Lại Ân, nhà thờ mang nét kiến trúc trang nhã với tường sáng, mái ngói đỏ và tháp chuông vươn cao giữa vườn cây xanh mát.',
+      question: 'Điểm nhận diện nổi bật của Nhà thờ Lại Ân trên bản đồ là gì?',
+      options: ['Tháp chuông nhỏ, thánh giá và mái ngói đỏ', 'Mái vòm kính hiện đại bên đồng lúa', 'Cầu gỗ bắc ngang giữa sới vật'],
+      answer: 0,
+      cardTitle: 'Thẻ Sưu Tầm: Chuông Chiều Lại Ân',
+      cardDesc: 'Ghi dấu không gian kiến trúc giao thoa bên dòng sông Hương.'
+    },
+    workshop: {
+      tag: 'Nghề truyền thống • Mini-game In Tranh',
+      title: 'Tranh Dân Gian Làng Sình Mộc Huy',
+      story: 'Tranh Sình dùng ván khắc gỗ in trên giấy điệp óng ánh vỏ sò, pha màu từ thiên nhiên (đỏ son, vàng hoa hòe, đen than xoan...). Ngoài tranh thờ (Bà Mụ, Ông Táo, gà lợn, nhà cửa, ngựa, quân...), tranh thường được đốt cúng dịp Tết/rằm để gửi gắm ước vọng bình an.',
+      question: 'Giấy in tranh dân gian Làng Sình thường được phủ lớp gì tạo ánh óng đặc trưng?',
+      options: ['Bột vỏ sò điệp nghiền mịn (giấy điệp)', 'Sơn bóng công nghiệp', 'Nhựa tổng hợp chống nước'],
+      answer: 0,
+      minigame: 'print',
+      cardTitle: 'Thẻ Sưu Tầm: Nghệ Nhân Giấy Điệp',
+      cardDesc: 'Tự tay lăn mực in hoàn chỉnh bức tranh dân gian Làng Sình.'
+    },
+    arena: {
+      tag: 'Hội Vật Mùng 10 • Mini-game Đấu Vật',
+      title: 'Sân vật làng Sình',
+      story: 'Vào mùng 10 tháng Giêng hằng năm, sới vật Làng Sình rộn ràng tiếng trống hội. Đô vật thi đấu thượng võ, tinh thần giao lưu cầu an, cầu mùa màng thuận hòa.',
+      question: 'Hội vật truyền thống Làng Sình thường diễn ra vào ngày nào?',
+      options: ['Mùng 10 tháng Giêng âm lịch', 'Rằm tháng Tám', 'Mùng 5 tháng Năm'],
+      answer: 0,
+      minigame: 'wrestle',
+      cardTitle: 'Thẻ Sưu Tầm: Đô Vật Thượng Võ',
+      cardDesc: 'Giữ nhịp chuẩn xác để hạ đo ván trên sới vật mùng 10.'
+    },
+    pier: {
+      tag: 'Sông Nước & Giao Thương',
+      title: 'Bến sông Hương',
+      story: 'Sông Hương uốn lượn ôm lấy bờ Lại Ân, vừa là tuyến giao thương – chài lưới – nuôi lồng bè, vừa là mạch nguồn bồi đắp phù sa cho đồng ruộng.',
+      question: 'Hoạt động sông nước nào gắn bó mật thiết với khúc sông quanh làng?',
+      options: ['Đò ngang, chài lưới và nuôi lồng bè', 'Khai thác than hầm lò', 'Đua thuyền buồm đại dương'],
+      answer: 0,
+      cardTitle: 'Thẻ Sưu Tầm: Bến Đò Sông Hương',
+      cardDesc: 'Nhịp đò xuôi ngược giữa sắc xanh lam tĩnh lặng.'
+    },
+    rice: {
+      tag: 'Canh Tác & Mùa Vụ',
+      title: 'Đồng lúa Lại Ân',
+      story: 'Phía Đông Nam làng là những thửa ruộng chia ô không đều, xen kẽ sắc xanh non và vàng rơm, rì rào theo gió đồng.',
+      question: 'Bờ ruộng và các ô lúa Lại Ân tạo nên nét đặc trưng nào trên sa bàn?',
+      options: ['Các ô chữ nhật không đều xen kẽ xanh/vàng rơm', 'Ruộng bậc thang đá dựng đứng', 'Đầm nuôi tôm công nghiệp'],
+      answer: 0,
+      cardTitle: 'Thẻ Sưu Tầm: Gió Đồng Lại Ân',
+      cardDesc: 'Mùa vàng trù phú nuôi dưỡng nhịp sống làng quê.'
+    }
+  }
+};
+
+// ============================================================================
+// 3. TIỆN ÍCH CHUYỂN ĐỔI TỌA ĐỘ LAT/LNG -> MÉT PHẲNG
+// ============================================================================
+const R_EARTH = 6378137;
+const DEG2RAD = Math.PI / 180;
+function toMeters(lng, lat) {
+  const lat0 = CONFIG.originLat * DEG2RAD;
+  const x = (lng - CONFIG.originLng) * DEG2RAD * R_EARTH * Math.cos(lat0);
+  const z = -(lat - CONFIG.originLat) * DEG2RAD * R_EARTH;
+  return new THREE.Vector3(x, 0, z);
+}
+
+// ============================================================================
+// 4. KHỞI TẠO SCENE, CAMERA, RENDERER & POST-PROCESSING
+// ============================================================================
+const container = document.getElementById('app');
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 2500);
+const DEFAULT_CAM_POS = new THREE.Vector3(120, 220, 260);
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, 10);
+camera.position.copy(DEFAULT_CAM_POS);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, CONFIG.maxPixelRatio));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'fixed';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+labelRenderer.domElement.style.zIndex = '10';
+container.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.maxPolarAngle = THREE.MathUtils.degToRad(62);
+controls.minPolarAngle = THREE.MathUtils.degToRad(18);
+controls.minDistance = 35;
+controls.maxDistance = 680;
+controls.target.copy(DEFAULT_TARGET);
+
+// Post-processing: Bloom nhẹ + Vignette 4 góc
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.22, // strength nhẹ
+  0.5,  // radius
+  0.86  // threshold
+);
+composer.addPass(bloomPass);
+
+const vignetteShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uDarkness: { value: 0.28 },
+    uOffset: { value: 1.05 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float uDarkness;
+    uniform float uOffset;
+    varying vec2 vUv;
+    void main() {
+      vec4 tex = texture2D(tDiffuse, vUv);
+      vec2 dist = (vUv - vec2(0.5)) * uOffset;
+      float vig = clamp(1.0 - dot(dist, dist) * uDarkness * 1.6, 0.0, 1.0);
+      gl_FragColor = vec4(tex.rgb * vig, tex.a);
+    }
+  `
+};
+composer.addPass(new ShaderPass(vignetteShader));
+
+// ============================================================================
+// 5. ÁNH SÁNG, SƯƠNG MÙ & CHẾ ĐỘ NGÀY / ĐÊM
+// ============================================================================
+const fog = new THREE.FogExp2(CONFIG.lighting.sunsetFog, 0.00085);
+scene.fog = fog;
+
+const hemiLight = new THREE.HemisphereLight(CONFIG.lighting.sunsetHemiSky, CONFIG.lighting.sunsetHemiGround, 0.95);
+scene.add(hemiLight);
+
+const sunLight = new THREE.DirectionalLight(CONFIG.lighting.sunsetSunColor, CONFIG.lighting.sunsetSunIntensity);
+sunLight.position.set(220, 175, -140); // Góc thấp hoàng hôn ấm
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.set(1024, 1024);
+sunLight.shadow.camera.near = 20;
+sunLight.shadow.camera.far = 900;
+const d = 420;
+sunLight.shadow.camera.left = -d;
+sunLight.shadow.camera.right = d;
+sunLight.shadow.camera.top = d;
+sunLight.shadow.camera.bottom = -d;
+scene.add(sunLight);
+
+let isNight = false;
+let isFestival = false;
+let lightsEnabled = true;
+let labelsEnabled = true;
+let adsEnabled = true;
+
+function applyDayNight() {
+  if (!isNight) {
+    sunLight.color.setHex(CONFIG.lighting.sunsetSunColor);
+    sunLight.intensity = CONFIG.lighting.sunsetSunIntensity;
+    sunLight.position.set(220, 175, -140);
+    hemiLight.color.setHex(CONFIG.lighting.sunsetHemiSky);
+    hemiLight.groundColor.setHex(CONFIG.lighting.sunsetHemiGround);
+    fog.color.setHex(CONFIG.lighting.sunsetFog);
+    scene.background = new THREE.Color(0xc8d8c8);
+    bloomPass.strength = 0.22;
+  } else {
+    sunLight.color.setHex(CONFIG.lighting.nightSunColor);
+    sunLight.intensity = CONFIG.lighting.nightSunIntensity;
+    sunLight.position.set(-180, 160, 140);
+    hemiLight.color.setHex(CONFIG.lighting.nightHemiSky);
+    hemiLight.groundColor.setHex(CONFIG.lighting.nightHemiGround);
+    fog.color.setHex(CONFIG.lighting.nightFog);
+    scene.background = new THREE.Color(0x131d2e);
+    bloomPass.strength = isFestival ? 0.55 : 0.42;
+  }
+}
+applyDayNight();
+
+// ============================================================================
+// 6. NỀN ĐẤT BOARD-GAME, ĐỒNG LÚA SÓNG GIÓ & SÔNG HƯƠNG
+// ============================================================================
+const riceUniforms = { uTime: { value: 0 } };
+const waterUniforms = { uTime: { value: 0 } };
+const fishCages = [];
+
+function buildBoardAndRice() {
+  const group = new THREE.Group();
+  const boardGeo = new THREE.BoxGeometry(CONFIG.worldSize, 20, CONFIG.worldSize);
+  const topMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.groundOlive, roughness: 0.92 });
+  const sideMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.groundBorder, roughness: 0.95 });
+  const board = new THREE.Mesh(boardGeo, [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
+  board.position.y = -10;
+  board.receiveShadow = true;
+  group.add(board);
+
+  // Đồng lúa phía dưới phải
+  const riceMat = new THREE.ShaderMaterial({
+    uniforms: {
+      ...riceUniforms,
+      uGold: { value: new THREE.Color(CONFIG.colors.riceGold) },
+      uGreen: { value: new THREE.Color(CONFIG.colors.riceGreen) }
+    },
+    vertexShader: `
+      uniform float uTime;
+      attribute float aMix;
+      varying float vMix;
+      varying float vWave;
+      void main() {
+        vMix = aMix;
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        float isTop = step(0.14, position.y);
+        float w = sin(wp.x * 0.065 + wp.z * 0.045 + uTime * 2.5) * 0.18 * isTop;
+        wp.x += w;
+        wp.y += abs(w) * 0.35;
+        vWave = w;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uGold;
+      uniform vec3 uGreen;
+      varying float vMix;
+      varying float vWave;
+      void main() {
+        vec3 col = mix(uGreen, uGold, vMix);
+        col += vec3(0.08, 0.07, 0.02) * smoothstep(0.05, 0.18, vWave);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
+  const bundMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.riceBund, roughness: 0.9 });
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const w = 60 + ((r * 19 + c * 29) % 22) - 11;
+      const d = 54 + ((r * 13 + c * 23) % 20) - 10;
+      const cx = 42 + c * 68 + (r % 2) * 7;
+      const cz = 42 + r * 66;
+      if (cx + cz < 185) continue;
+
+      const paddyGeo = new THREE.BoxGeometry(w - 2.2, 0.28, d - 2.2, 5, 1, 5);
+      const mixes = new Float32Array(paddyGeo.attributes.position.count).fill(((r * 7 + c * 11) % 10) / 10);
+      paddyGeo.setAttribute('aMix', new THREE.BufferAttribute(mixes, 1));
+      const paddy = new THREE.Mesh(paddyGeo, riceMat);
+      paddy.position.set(cx, 0.14, cz);
+      paddy.rotation.y = -0.14;
+      group.add(paddy);
+
+      const bund = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), bundMat);
+      bund.position.set(cx, 0.1, cz);
+      bund.rotation.y = -0.14;
+      bund.receiveShadow = true;
+      group.add(bund);
+    }
+  }
+  scene.add(group);
+}
+
+function buildRiver() {
+  const group = new THREE.Group();
+  const ring = DATA.water.features[0].geometry.coordinates[0];
+  const pts2 = ring.map(([lng, lat]) => {
+    const v = toMeters(lng, lat);
+    return new THREE.Vector2(v.x, v.z);
+  });
+
+  const shape = new THREE.Shape(pts2);
+  const geom = new THREE.ShapeGeometry(shape, 20);
+  geom.rotateX(Math.PI / 2);
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      ...waterUniforms,
+      uShallow: { value: new THREE.Color(CONFIG.colors.waterShallow) },
+      uDeep: { value: new THREE.Color(CONFIG.colors.waterDeep) }
+    },
+    vertexShader: `
+      uniform float uTime;
+      varying vec2 vXZ;
+      varying float vWave;
+      void main() {
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        float wave = sin(wp.x * 0.08 + uTime * 1.6) * cos(wp.z * 0.08 + uTime * 1.2) * 0.14;
+        wp.y += wave;
+        vXZ = wp.xz;
+        vWave = wave;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uShallow;
+      uniform vec3 uDeep;
+      varying vec2 vXZ;
+      varying float vWave;
+      void main() {
+        float depth = clamp((-vXZ.x - vXZ.y + 340.0) / 680.0, 0.0, 1.0);
+        vec3 col = mix(uShallow, uDeep, depth);
+        col = mix(col, vec3(0.75, 0.88, 0.94), smoothstep(0.07, 0.14, vWave) * 0.22);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
+  const river = new THREE.Mesh(geom, mat);
+  river.position.y = -0.35;
+  group.add(river);
+
+  // Bãi cát sáng dọc bờ
+  const sandMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.sandBank, roughness: 0.9, flatShading: true });
+  [2, 3, 4].forEach((idx, i) => {
+    const p = pts2[idx];
+    if (!p) return;
+    const g = new THREE.CylinderGeometry(12 + i * 2, 16 + i * 2, 0.45, 7);
+    g.scale(1.5, 1, 0.6);
+    const m = new THREE.Mesh(g, sandMat);
+    m.position.set(p.x - 3, -0.22, p.y - 3);
+    m.rotation.y = 0.7;
+    group.add(m);
+  });
+
+  // Lồng bè cá nhỏ trên sông
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8c6239, roughness: 0.8 });
+  const netMat = new THREE.MeshStandardMaterial({ color: 0x264653, roughness: 0.9 });
+  [[-240, -220], [-265, -195], [-135, -340]].forEach(([x, z], idx) => {
+    const cage = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.55, 6.5), woodMat);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.6, 4.6), netMat);
+    const hut = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 2.4), woodMat);
+    hut.position.set(0, 1.1, -1.6);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.1, 1.1, 4), new THREE.MeshStandardMaterial({ color: CONFIG.colors.roofGray }));
+    roof.position.set(0, 2.2, -1.6);
+    roof.rotation.y = Math.PI / 4;
+    cage.add(base, slot, hut, roof);
+    cage.position.set(x, -0.2, z);
+    cage.rotation.y = 0.7 + idx * 0.15;
+    group.add(cage);
+    fishCages.push(cage);
+  });
+
+  scene.add(group);
+}
+
+// ============================================================================
+// 7. MẠNG LƯỚI ĐƯỜNG BO GÓC & ĐỒ THỊ TÌM ĐƯỜNG A*
+// ============================================================================
+const roadNodes = new Map();
+const roadSegments = [];
+const roadLabels = [];
+
+function getOrCreateRoadNode(pos) {
+  for (const n of roadNodes.values()) {
+    if (n.pos.distanceTo(pos) < 4.5) return n;
+  }
+  const id = 'n_' + roadNodes.size;
+  const node = { id, pos: pos.clone(), neighbors: [] };
+  roadNodes.set(id, node);
+  return node;
+}
+
+function buildRoads() {
+  const surfGeoms = [];
+  const edgeGeoms = [];
+
+  for (const f of DATA.roads.features) {
+    const coords = f.geometry.coordinates;
+    const width = f.properties.width || 5;
+    const name = f.properties.name || '';
+    const pts = coords.map(([lng, lat]) => {
+      const v = toMeters(lng, lat);
+      return new THREE.Vector3(v.x, 0.06, v.z);
+    });
+
+    roadSegments.push({ pts, width });
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1];
+      const n1 = getOrCreateRoadNode(a);
+      const n2 = getOrCreateRoadNode(b);
+      if (n1.id !== n2.id) {
+        const cost = n1.pos.distanceTo(n2.pos);
+        if (!n1.neighbors.some(x => x.id === n2.id)) n1.neighbors.push({ id: n2.id, cost });
+        if (!n2.neighbors.some(x => x.id === n1.id)) n2.neighbors.push({ id: n1.id, cost });
+      }
+
+      const dist = a.distanceTo(b);
+      const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+      const angle = Math.atan2(b.x - a.x, b.z - a.z);
+
+      const s = new THREE.BoxGeometry(width, 0.08, dist);
+      s.rotateY(angle); s.translate(mid.x, 0.05, mid.z);
+      surfGeoms.push(s);
+
+      const e = new THREE.BoxGeometry(width + 0.7, 0.05, dist);
+      e.rotateY(angle); e.translate(mid.x, 0.03, mid.z);
+      edgeGeoms.push(e);
+    }
+
+    for (const p of pts) {
+      const j = new THREE.CylinderGeometry(width / 2, width / 2, 0.08, 12);
+      j.translate(p.x, 0.05, p.z);
+      surfGeoms.push(j);
+
+      const je = new THREE.CylinderGeometry((width + 0.7) / 2, (width + 0.7) / 2, 0.05, 12);
+      je.translate(p.x, 0.03, p.z);
+      edgeGeoms.push(je);
+    }
+
+    if (name && pts.length >= 2) {
+      const midIdx = Math.floor((pts.length - 1) / 2);
+      const pos = new THREE.Vector3().addVectors(pts[midIdx], pts[midIdx + 1]).multiplyScalar(0.5);
+      const div = document.createElement('div');
+      div.className = 'road-label';
+      div.textContent = name;
+      const obj = new CSS2DObject(div);
+      obj.position.set(pos.x, 0.3, pos.z);
+      scene.add(obj);
+      roadLabels.push(div);
+    }
+  }
+
+  const mergedSurf = mergeGeometries(surfGeoms, false);
+  const surfMesh = new THREE.Mesh(mergedSurf, new THREE.MeshStandardMaterial({ color: CONFIG.colors.roadSurface, roughness: 0.85 }));
+  surfMesh.receiveShadow = true;
+  scene.add(surfMesh);
+
+  const mergedEdge = mergeGeometries(edgeGeoms, false);
+  const edgeMesh = new THREE.Mesh(mergedEdge, new THREE.MeshStandardMaterial({ color: CONFIG.colors.roadEdge, roughness: 0.9 }));
+  edgeMesh.receiveShadow = true;
+  scene.add(edgeMesh);
+}
+
+function findNearestRoadNode(pos) {
+  let best = null, minD = Infinity;
+  for (const n of roadNodes.values()) {
+    const d = n.pos.distanceTo(pos);
+    if (d < minD) { minD = d; best = n; }
+  }
+  return best;
+}
+
+function findPath(start, end) {
+  const sNode = findNearestRoadNode(start);
+  const eNode = findNearestRoadNode(end);
+  if (!sNode || !eNode) return [end.clone()];
+  if (sNode.id === eNode.id) return [sNode.pos.clone(), end.clone()];
+
+  const open = new Set([sNode.id]);
+  const cameFrom = new Map();
+  const g = new Map(), f = new Map();
+  for (const id of roadNodes.keys()) { g.set(id, Infinity); f.set(id, Infinity); }
+  g.set(sNode.id, 0);
+  f.set(sNode.id, sNode.pos.distanceTo(eNode.pos));
+
+  while (open.size > 0) {
+    let curr = '', bestF = Infinity;
+    for (const id of open) {
+      const fv = f.get(id) ?? Infinity;
+      if (fv < bestF) { bestF = fv; curr = id; }
+    }
+    if (curr === eNode.id) {
+      const path = [end.clone()];
+      let k = curr;
+      while (k) {
+        const node = roadNodes.get(k);
+        if (node) path.unshift(node.pos.clone());
+        k = cameFrom.get(k);
+      }
+      return path;
+    }
+    open.delete(curr);
+    const curNode = roadNodes.get(curr);
+    for (const nb of curNode.neighbors) {
+      const tg = (g.get(curr) ?? Infinity) + nb.cost;
+      if (tg < (g.get(nb.id) ?? Infinity)) {
+        cameFrom.set(nb.id, curr);
+        g.set(nb.id, tg);
+        const nbNode = roadNodes.get(nb.id);
+        f.set(nb.id, tg + nbNode.pos.distanceTo(eNode.pos));
+        open.add(nb.id);
+      }
+    }
+  }
+  return [end.clone()];
+}
+
+// ============================================================================
+// 8. NHÀ DÂN (60% NGÓI ĐỎ CAM, 25% TÔN XÁM, 15% BE), CÂY & ĐIỂM NHẤN LÀNG
+// ============================================================================
+const lampLights = [];
+const festivalProps = new THREE.Group();
+festivalProps.visible = false;
+scene.add(festivalProps);
+
+function isClearSpot(x, z) {
+  // Tránh sông Hương, đồng lúa lớn phía Đông Nam, và trung tâm địa danh
+  if (x + z < -130 && x < -40) return false;
+  if (x > 35 && z > 35) return false;
+  for (const lm of DATA.landmarks) {
+    const p = toMeters(lm.lng, lm.lat);
+    if (Math.hypot(x - p.x, z - p.z) < 28) return false;
+  }
+  return true;
+}
+
+function buildHousesAndTrees() {
+  // Tạo các cụm nhà dân 1-2 tầng quanh khu vực làng (xóm 8, xóm 9, trục Liên thôn, đường làng)
+  const houseSpecs = [];
+  for (let i = 0; i < 155; i++) {
+    const angle = (i * 2.39996) % (Math.PI * 2);
+    const radius = 22 + ((i * 19) % 210);
+    const x = Math.cos(angle) * radius - 35;
+    const z = Math.sin(angle) * radius - 35;
+    if (!isClearSpot(x, z)) continue;
+
+    const floors = (i % 4 === 0) ? 2 : 1;
+    const w = 8 + (i % 5) * 1.8;
+    const d = 7 + ((i * 3) % 4) * 1.6;
+    const h = floors * 3.4;
+    const rotY = ((i * 0.7) % 6.28);
+    const r = (i * 37) % 100;
+    const roofType = r < 60 ? 'red' : (r < 85 ? 'gray' : 'beige');
+    houseSpecs.push({ x, z, w, d, h, rotY, roofType });
+  }
+
+  // InstancedMesh cho thân nhà
+  const wallGeo = new THREE.BoxGeometry(1, 1, 1);
+  wallGeo.translate(0, 0.5, 0);
+  const wallMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.wallCream, roughness: 0.85 });
+  const wallInst = new THREE.InstancedMesh(wallGeo, wallMat, houseSpecs.length);
+  wallInst.castShadow = true;
+  wallInst.receiveShadow = true;
+
+  // Mái dốc (Cone 4 cạnh xoay 45 độ làm mái tứ diện/nhà dốc low-poly)
+  const roofGeo = new THREE.ConeGeometry(0.78, 0.45, 4);
+  roofGeo.rotateY(Math.PI / 4);
+  const redHouses = houseSpecs.filter(s => s.roofType === 'red');
+  const grayHouses = houseSpecs.filter(s => s.roofType === 'gray');
+  const beigeHouses = houseSpecs.filter(s => s.roofType === 'beige');
+
+  const makeRoofInst = (list, color) => {
+    const inst = new THREE.InstancedMesh(roofGeo, new THREE.MeshStandardMaterial({ color, roughness: 0.72 }), Math.max(1, list.length));
+    inst.castShadow = true;
+    const dummy = new THREE.Object3D();
+    list.forEach((s, idx) => {
+      dummy.position.set(s.x, s.h, s.z);
+      dummy.rotation.set(0, s.rotY, 0);
+      dummy.scale.set(s.w * 1.05, s.h * 0.65, s.d * 1.05);
+      dummy.updateMatrix();
+      inst.setMatrixAt(idx, dummy.matrix);
+    });
+    return inst;
+  };
+
+  const dummy = new THREE.Object3D();
+  houseSpecs.forEach((s, idx) => {
+    dummy.position.set(s.x, 0, s.z);
+    dummy.rotation.set(0, s.rotY, 0);
+    dummy.scale.set(s.w, s.h, s.d);
+    dummy.updateMatrix();
+    wallInst.setMatrixAt(idx, dummy.matrix);
+  });
+
+  scene.add(wallInst);
+  scene.add(makeRoofInst(redHouses, CONFIG.colors.roofRed));
+  scene.add(makeRoofInst(grayHouses, CONFIG.colors.roofGray));
+  scene.add(makeRoofInst(beigeHouses, CONFIG.colors.roofBeige));
+
+  // Cây xanh low-poly InstancedMesh (mật độ cao ven sông & vườn nhà)
+  const treePositions = [];
+  for (let i = 0; i < 240; i++) {
+    let x, z;
+    if (i < 85) {
+      // Dọc bờ sông Hương
+      const t = i / 85;
+      x = -290 + t * 230 + ((i % 5) - 2) * 5;
+      z = 40 - t * 380 + (((i * 7) % 5) - 2) * 5;
+    } else {
+      const a = (i * 1.61803) % (Math.PI * 2);
+      const rad = 18 + ((i * 23) % 230);
+      x = Math.cos(a) * rad - 30;
+      z = Math.sin(a) * rad - 30;
+      if (x > 40 && z > 40) continue;
+    }
+    treePositions.push({ x, z, s: 0.75 + (i % 6) * 0.16, dark: i % 2 === 0 });
+  }
+
+  const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 2.2, 5);
+  trunkGeo.translate(0, 1.1, 0);
+  const trunkInst = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: CONFIG.colors.woodBrown }), treePositions.length);
+  trunkInst.castShadow = true;
+
+  const crownGeo = new THREE.DodecahedronGeometry(2.4, 0);
+  crownGeo.scale(1, 1.25, 1);
+  crownGeo.translate(0, 3.2, 0);
+
+  const darkTrees = treePositions.filter(t => t.dark);
+  const midTrees = treePositions.filter(t => !t.dark);
+
+  const makeCrownInst = (arr, col) => {
+    const inst = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.85, flatShading: true }), Math.max(1, arr.length));
+    inst.castShadow = true;
+    arr.forEach((t, idx) => {
+      dummy.position.set(t.x, 0, t.z);
+      dummy.rotation.set(0, idx * 0.9, 0);
+      dummy.scale.setScalar(t.s);
+      dummy.updateMatrix();
+      inst.setMatrixAt(idx, dummy.matrix);
+    });
+    return inst;
+  };
+
+  treePositions.forEach((t, idx) => {
+    dummy.position.set(t.x, 0, t.z);
+    dummy.rotation.set(0, idx, 0);
+    dummy.scale.setScalar(t.s);
+    dummy.updateMatrix();
+    trunkInst.setMatrixAt(idx, dummy.matrix);
+  });
+
+  scene.add(trunkInst, makeCrownInst(darkTrees, CONFIG.colors.treeDark), makeCrownInst(midTrees, CONFIG.colors.treeMid));
+
+  // Điểm nhấn: Cây đa đầu làng + giếng cổ + cổng làng
+  const banyan = new THREE.Group();
+  const bTrunk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.2, 6, 7), new THREE.MeshStandardMaterial({ color: CONFIG.colors.woodBrown }));
+  bTrunk.position.y = 3; bTrunk.castShadow = true;
+  const bCrown = new THREE.Mesh(new THREE.DodecahedronGeometry(7.5, 1), new THREE.MeshStandardMaterial({ color: CONFIG.colors.treeDark, flatShading: true }));
+  bCrown.position.y = 7.5; bCrown.scale.set(1.2, 0.85, 1.2); bCrown.castShadow = true;
+  banyan.add(bTrunk, bCrown);
+  banyan.position.set(-25, 0, 12);
+  scene.add(banyan);
+
+  const well = new THREE.Group();
+  const wWall = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.7, 1.3, 8), new THREE.MeshStandardMaterial({ color: 0x9fa39a }));
+  wWall.position.y = 0.65;
+  const wWater = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.2, 8), new THREE.MeshStandardMaterial({ color: CONFIG.colors.waterShallow }));
+  wWater.position.y = 0.9;
+  well.add(wWall, wWater);
+  well.position.set(-14, 0, 8);
+  scene.add(well);
+
+  // Đèn đường/đèn nhà ấm nhấp nháy nhẹ (additive)
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: CONFIG.colors.warmLight,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x3a3630 });
+
+  for (let i = 0; i < 18; i++) {
+    const seg = roadSegments[i % roadSegments.length];
+    const p = seg.pts[Math.min(i % seg.pts.length, seg.pts.length - 1)];
+    const lx = p.x + ((i % 2 === 0 ? 1 : -1) * 5.2);
+    const lz = p.z + (((i * 3) % 2 === 0 ? 1 : -1) * 4.2);
+
+    const lampGroup = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 4.5, 6), postMat);
+    pole.position.y = 2.25;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.65, 8, 8), glowMat);
+    bulb.position.y = 4.7;
+    lampGroup.add(pole, bulb);
+    lampGroup.position.set(lx, 0, lz);
+    scene.add(lampGroup);
+    lampLights.push({ group: lampGroup, bulb, phase: i * 0.9 });
+  }
+}
+
+// ============================================================================
+// 9. ĐỊA DANH 3D RIÊNG BIỆT + NHÃN CSS2D + LOD
+// ============================================================================
+const landmarkObjects = new Map();
+const landmarkLabelEls = [];
+
+function createLandmarkModel(kind) {
+  const g = new THREE.Group();
+  const goldRing = new THREE.Mesh(
+    new THREE.RingGeometry(11.5, 13.2, 28),
+    new THREE.MeshBasicMaterial({ color: CONFIG.colors.highlightGold, side: THREE.DoubleSide })
+  );
+  goldRing.rotation.x = -Math.PI / 2;
+  goldRing.position.y = 0.14;
+  g.add(goldRing);
+
+  if (kind === 'church') {
+    // Nhà thờ Lại Ân: tường trắng, mái ngói đỏ, tháp chuông + thánh giá
+    const nave = new THREE.Mesh(new THREE.BoxGeometry(14, 7, 22), new THREE.MeshStandardMaterial({ color: 0xf8f5ee }));
+    nave.position.y = 3.5; nave.castShadow = true;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(12, 5.5, 4), new THREE.MeshStandardMaterial({ color: CONFIG.colors.roofRed }));
+    roof.position.y = 9.5; roof.rotation.y = Math.PI / 4;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(5.5, 15, 5.5), new THREE.MeshStandardMaterial({ color: 0xf8f5ee }));
+    tower.position.set(0, 7.5, 9); tower.castShadow = true;
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(4.3, 6, 4), new THREE.MeshStandardMaterial({ color: CONFIG.colors.roofRed }));
+    spire.position.set(0, 18, 9); spire.rotation.y = Math.PI / 4;
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 0.5), new THREE.MeshStandardMaterial({ color: 0xffe07d }));
+    crossV.position.set(0, 22.2, 9);
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0xffe07d }));
+    crossH.position.set(0, 22.6, 9);
+    g.add(nave, roof, tower, spire, crossV, crossH);
+  } else if (kind === 'workshop') {
+    // Tranh Dân Gian Làng Sình Mộc Huy: nhà gỗ mái âm dương + sân phơi tranh màu sắc
+    const hall = new THREE.Mesh(new THREE.BoxGeometry(15, 5.5, 11), new THREE.MeshStandardMaterial({ color: CONFIG.colors.woodBrown }));
+    hall.position.set(0, 2.75, -3); hall.castShadow = true;
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(17, 2.2, 13), new THREE.MeshStandardMaterial({ color: CONFIG.colors.roofRed }));
+    roof.position.set(0, 6.2, -3);
+    g.add(hall, roof);
+
+    const printColors = [0xe63926, 0xf4b400, 0x2a9d8f, 0xe76f51, 0x3a86ff];
+    for (let i = 0; i < 6; i++) {
+      const sheet = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 2.0, 0.15),
+        new THREE.MeshStandardMaterial({ color: printColors[i % printColors.length] })
+      );
+      sheet.position.set(-7.5 + i * 3.0, 1.3, 5.5);
+      g.add(sheet);
+    }
+  } else if (kind === 'arena') {
+    // Sân vật làng Sình: bãi đất tròn, bục nhỏ, cờ phướn, khán giả low-poly
+    const ringGround = new THREE.Mesh(
+      new THREE.CylinderGeometry(10.5, 11, 0.3, 24),
+      new THREE.MeshStandardMaterial({ color: 0xd9b37c, roughness: 0.9 })
+    );
+    ringGround.position.y = 0.15; ringGround.receiveShadow = true;
+    const podium = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.7, 3), new THREE.MeshStandardMaterial({ color: CONFIG.colors.roofRed }));
+    podium.position.set(0, 0.45, -11.5);
+    g.add(ringGround, podium);
+
+    // Khán giả quanh sới
+    const specMat = new THREE.MeshStandardMaterial({ color: 0xfff3d1 });
+    for (let i = 0; i < 16; i++) {
+      const ang = (i / 16) * Math.PI * 2;
+      const person = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.1, 4, 6), specMat);
+      person.position.set(Math.cos(ang) * 12.6, 1.0, Math.sin(ang) * 12.6);
+      g.add(person);
+    }
+  } else if (kind === 'pier') {
+    // Bến sông Hương: cầu gỗ nhỏ + vài chiếc đò
+    const jetty = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 14), new THREE.MeshStandardMaterial({ color: CONFIG.colors.woodBrown }));
+    jetty.position.set(-6, 0.2, -5);
+    const boat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.0, 8.5), new THREE.MeshStandardMaterial({ color: 0x7a4928 }));
+    boat.position.set(-12, 0.1, -9); boat.rotation.y = 0.5;
+    g.add(jetty, boat);
+  } else if (kind === 'rice') {
+    // Đồng lúa Lại Ân: cờ cắm + con trâu low-poly
+    const buffaloBody = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 1.7), new THREE.MeshStandardMaterial({ color: 0x3b3835 }));
+    buffaloBody.position.set(3, 1.4, 2); buffaloBody.castShadow = true;
+    const buffaloHead = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x3b3835 }));
+    buffaloHead.position.set(4.8, 1.8, 2);
+    const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 6, 5), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+    flagPole.position.set(-3, 3, -2);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2, 0.1), new THREE.MeshStandardMaterial({ color: CONFIG.colors.lanternRed }));
+    flag.position.set(-1.9, 5.2, -2);
+    g.add(buffaloBody, buffaloHead, flagPole, flag);
+  }
+  return g;
+}
+
+function buildLandmarks() {
+  for (const lm of DATA.landmarks) {
+    const pos = toMeters(lm.lng, lm.lat);
+    const model = createLandmarkModel(lm.kind);
+    model.position.set(pos.x, 0, pos.z);
+    scene.add(model);
+
+    const div = document.createElement('div');
+    div.className = 'lm-label';
+    div.textContent = lm.name;
+    div.addEventListener('click', () => flyToPosition(pos.x, pos.z, lm.id));
+
+    const labelObj = new CSS2DObject(div);
+    labelObj.position.set(pos.x, 12, pos.z);
+    scene.add(labelObj);
+    landmarkLabelEls.push(div);
+    landmarkObjects.set(lm.id, { ...lm, pos });
+  }
+}
+
+// ============================================================================
+// 10. HOTSPOT "?" VĂN HÓA + MINI-GAME + THẺ SƯU TẦM
+// ============================================================================
+const hotspots = [];
+const unlockedCards = new Set();
+
+function buildHotspots() {
+  for (const lm of DATA.landmarks) {
+    const pos = toMeters(lm.lng, lm.lat);
+    const div = document.createElement('div');
+    div.className = 'hotspot-bubble';
+    div.dataset.id = lm.id;
+    div.innerHTML = '<span>?</span>';
+    div.addEventListener('click', (e) => {
+      e.stopPropagation();
+      flyToPosition(pos.x, pos.z, lm.id, () => openQuizModal(lm.id));
+    });
+
+    const obj = new CSS2DObject(div);
+    obj.position.set(pos.x, 18.5, pos.z);
+    scene.add(obj);
+    hotspots.push({ id: lm.id, el: div, obj });
+  }
+}
+
+function markSolved(id) {
+  unlockedCards.add(id);
+  document.getElementById('cards-count').textContent = String(unlockedCards.size);
+  const hs = hotspots.find(h => h.id === id);
+  if (hs) {
+    hs.el.classList.add('solved');
+    hs.el.innerHTML = '<span>✓</span>';
+  }
+}
+
+// ============================================================================
+// 11. NHÂN VẬT ĐỘI NÓN LÁ, TÌM ĐƯỜNG, NÚT "LÊN ĐÒ" & NPC
+// ============================================================================
+const playerGroup = new THREE.Group();
+const npcs = [];
+let currentPath = [];
+let isBoating = false;
+let boatProgress = 0;
+const boatRoute = [
+  new THREE.Vector3(-250, 0.2, -210),
+  new THREE.Vector3(-225, 0.2, -265),
+  new THREE.Vector3(-185, 0.2, -315),
+  new THREE.Vector3(-135, 0.2, -355)
+];
+
+function createHatCharacter(shirtColor, hatColor = 0xe8cfa0) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.55, 1.2, 4, 8),
+    new THREE.MeshStandardMaterial({ color: shirtColor })
+  );
+  body.position.y = 1.15; body.castShadow = true;
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.48, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xf2c69e })
+  );
+  head.position.y = 2.05;
+
+  const hat = new THREE.Mesh(
+    new THREE.ConeGeometry(1.25, 0.65, 12),
+    new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.85 })
+  );
+  hat.position.y = 2.48; hat.castShadow = true;
+
+  g.add(body, head, hat);
+  return g;
+}
+
+function buildCharactersAndNPCs() {
+  const p = toMeters(DATA.landmarks[2].lng, DATA.landmarks[2].lat);
+  const char = createHatCharacter(0x2d6a4f);
+  playerGroup.add(char);
+  playerGroup.position.set(p.x + 8, 0, p.z + 6);
+  scene.add(playerGroup);
+
+  // NPC: người gánh tranh, đô vật, trẻ em chạy, trâu ngoài đồng
+  const npcConfigs = [
+    { color: 0xb5651d, x: 25, z: -15, speed: 6 },
+    { color: 0xd62828, x: -20, z: -18, speed: 5 },
+    { color: 0x0077b6, x: 15, z: 25, speed: 11 }
+  ];
+  npcConfigs.forEach((cfg, idx) => {
+    const npc = createHatCharacter(cfg.color);
+    npc.position.set(cfg.x, 0, cfg.z);
+    scene.add(npc);
+    npcs.push({ mesh: npc, origin: new THREE.Vector3(cfg.x, 0, cfg.z), speed: cfg.speed, phase: idx * 2.1 });
+  });
+}
+
+// ============================================================================
+// 12. BIỂN QUẢNG CÁO (ADS.JSON), CỘT CỜ XANH & CHẾ ĐỘ HỘI VẬT
+// ============================================================================
+const adsGroup = new THREE.Group();
+scene.add(adsGroup);
+
+function createAdTexture(title, subtitle) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fbf4e2';
+  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillStyle = '#7a8f4b';
+  ctx.fillRect(0, 0, 512, 54);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(title, 20, 35);
+  ctx.fillStyle = '#4a2e1b';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.fillText(subtitle, 20, 125);
+  ctx.fillStyle = '#c85a32';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('Khám phá Làng Sình • Huế →', 20, 195);
+  return new THREE.CanvasTexture(c);
+}
+
+function buildAdsAndFestival() {
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.5 });
+  const goldTrim = new THREE.MeshStandardMaterial({ color: CONFIG.colors.highlightGold, metalness: 0.4, roughness: 0.3 });
+
+  for (const ad of DATA.ads) {
+    const p = toMeters(ad.lng, ad.lat);
+    const boardGroup = new THREE.Group();
+
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 6.5, 8), frameMat);
+    postL.position.set(-4.2, 3.25, 0);
+    const postR = postL.clone();
+    postR.position.set(4.2, 3.25, 0);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(9.4, 4.8, 0.5), goldTrim);
+    frame.position.y = 4.6;
+
+    const tex = createAdTexture(ad.title, ad.subtitle);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(8.8, 4.2), new THREE.MeshBasicMaterial({ map: tex }));
+    face.position.set(0, 4.6, 0.28);
+
+    boardGroup.add(postL, postR, frame, face);
+    boardGroup.position.set(p.x, 0, p.z);
+    boardGroup.rotation.y = ad.rotY;
+    adsGroup.add(boardGroup);
+  }
+
+  // Cột cờ biển hiệu xanh nhỏ dọc đường lớn
+  const blueMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.signBlue });
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9 });
+  for (let i = 0; i < 6; i++) {
+    const p = toMeters(107.6585 + i * 0.0008, 16.4642 + (i % 2) * 0.0008);
+    const sign = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4.2, 6), poleMat);
+    pole.position.y = 2.1;
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.9, 0.12), blueMat);
+    banner.position.set(0.9, 3.4, 0);
+    sign.add(pole, banner);
+    sign.position.set(p.x, 0, p.z);
+    adsGroup.add(sign);
+  }
+
+  // Chế độ Hội vật: đèn lồng giấy đỏ + cờ phướn quanh Sân vật
+  const arenaPos = toMeters(DATA.landmarks[2].lng, DATA.landmarks[2].lat);
+  const lanternMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.lanternRed });
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const lx = arenaPos.x + Math.cos(a) * 16;
+    const lz = arenaPos.z + Math.sin(a) * 16;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5.5, 6), poleMat);
+    pole.position.set(lx, 2.75, lz);
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 10), lanternMat);
+    lantern.scale.set(1, 1.2, 1);
+    lantern.position.set(lx, 5.4, lz);
+    festivalProps.add(pole, lantern);
+  }
+}
+
+// ============================================================================
+// 13. CAMERA FLY-TO & RAYCAST CLICK TRÊN BẢN ĐỒ
+// ============================================================================
+let flyAnim = null;
+
+function flyToPosition(x, z, landmarkId = null, onArrive = null) {
+  const targetPos = new THREE.Vector3(x, 0, z);
+  const desiredCamPos = new THREE.Vector3(x + 42, 56, z + 58);
+  flyAnim = {
+    startCam: camera.position.clone(),
+    endCam: desiredCamPos,
+    startTarget: controls.target.clone(),
+    endTarget: targetPos,
+    t: 0,
+    onArrive
+  };
+
+  // Nếu bấm gần bến sông Hương thì hiện nút pill "Lên đò"
+  const pierPos = toMeters(DATA.landmarks[3].lng, DATA.landmarks[3].lat);
+  const boatPill = document.getElementById('boat-pill');
+  if (landmarkId === 'pier' || Math.hypot(x - pierPos.x, z - pierPos.z) < 55) {
+    boatPill.classList.add('visible');
+  } else {
+    boatPill.classList.remove('visible');
+  }
+}
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let pointerDownPos = { x: 0, y: 0 };
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  pointerDownPos = { x: e.clientX, y: e.clientY };
+});
+
+renderer.domElement.addEventListener('pointerup', (e) => {
+  const moved = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+  if (moved > 6) return; // Bỏ qua nếu đang kéo orbit
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const hit = new THREE.Vector3();
+  if (raycaster.ray.intersectPlane(plane, hit)) {
+    isBoating = false;
+    currentPath = findPath(playerGroup.position, hit);
+    const pierPos = toMeters(DATA.landmarks[3].lng, DATA.landmarks[3].lat);
+    document.getElementById('boat-pill').classList.toggle('visible', hit.distanceTo(pierPos) < 55);
+  }
+});
+
+document.getElementById('boat-pill').addEventListener('click', () => {
+  isBoating = true;
+  boatProgress = 0;
+  currentPath = [];
+  playerGroup.position.copy(boatRoute[0]);
+});
+
+// ============================================================================
+// 14. QUIZ & MINI-GAME (IN TRANH SÌNH + ĐẤU VẬT MÙNG 10)
+// ============================================================================
+const modalBackdrop = document.getElementById('modal-backdrop');
+const modalCard = document.getElementById('modal-card');
+
+function openQuizModal(id) {
+  const q = DATA.quiz[id];
+  if (!q) return;
+
+  modalCard.innerHTML = `
+    <div class="modal-header">
+      <div>
+        <div class="modal-tag">${q.tag}</div>
+        <h2 class="modal-title">${q.title}</h2>
+      </div>
+      <button class="btn-close" id="btn-close-modal">✕</button>
+    </div>
+    <p class="modal-story">${q.story}</p>
+    <div class="quiz-q">${q.question}</div>
+    <div class="quiz-options" id="quiz-options">
+      ${q.options.map((opt, idx) => `<button class="quiz-opt" data-idx="${idx}">${opt}</button>`).join('')}
+    </div>
+    <div id="minigame-area"></div>
+    <div class="reward-card ${unlockedCards.has(id) ? 'unlocked' : ''}" id="reward-card">
+      <strong>🎉 ${q.cardTitle}</strong>
+      <p style="font-size:0.85rem;margin-top:4px;">${q.cardDesc}</p>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('open');
+  document.getElementById('btn-close-modal').addEventListener('click', () => modalBackdrop.classList.remove('open'));
+
+  document.querySelectorAll('.quiz-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.idx);
+      document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+      if (idx === q.answer) {
+        btn.classList.add('correct');
+        if (q.minigame === 'print') {
+          setupPrintMinigame(id);
+        } else if (q.minigame === 'wrestle') {
+          setupWrestleMinigame(id);
+        } else {
+          markSolved(id);
+          document.getElementById('reward-card').classList.add('unlocked');
+        }
+      } else {
+        btn.classList.add('wrong');
+        document.querySelectorAll('.quiz-opt')[q.answer].classList.add('correct');
+        document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = false);
+      }
+    });
+  });
+}
+
+function setupPrintMinigame(id) {
+  const area = document.getElementById('minigame-area');
+  area.innerHTML = `
+    <div class="minigame-box">
+      <div class="minigame-title">🖌️ Mini-game: Kéo con lăn lên ván khắc để in tranh Sình</div>
+      <div class="print-canvas-wrap">
+        <canvas id="print-canvas" width="460" height="170"></canvas>
+      </div>
+      <div style="font-size:0.8rem;margin-top:6px;" id="print-status">Tiến độ lăn mực: 0%</div>
+    </div>
+  `;
+  const canvas = document.getElementById('print-canvas');
+  const ctx = canvas.getContext('2d');
+  // Vẽ nét ván khắc sẵn
+  ctx.strokeStyle = '#6b4423';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(24, 18, canvas.width - 48, canvas.height - 36);
+  ctx.font = 'bold 22px Nunito, sans-serif';
+  ctx.fillStyle = '#b59469';
+  ctx.fillText('TRANH DÂN GIAN LÀNG SÌNH', 88, 92);
+
+  let painted = 0;
+  let dragging = false;
+  const paintAt = (clientX, clientY) => {
+    const r = canvas.getBoundingClientRect();
+    const x = (clientX - r.left) * (canvas.width / r.width);
+    const y = (clientY - r.top) * (canvas.height / r.height);
+    ctx.fillStyle = 'rgba(200, 90, 50, 0.35)';
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, Math.PI * 2);
+    ctx.fill();
+    painted = Math.min(100, painted + 3.5);
+    document.getElementById('print-status').textContent = `Tiến độ lăn mực: ${Math.round(painted)}%`;
+    if (painted >= 100) {
+      markSolved(id);
+      document.getElementById('reward-card').classList.add('unlocked');
+    }
+  };
+
+  canvas.addEventListener('pointerdown', (e) => { dragging = true; paintAt(e.clientX, e.clientY); });
+  window.addEventListener('pointermove', (e) => { if (dragging) paintAt(e.clientX, e.clientY); });
+  window.addEventListener('pointerup', () => { dragging = false; });
+}
+
+function setupWrestleMinigame(id) {
+  const area = document.getElementById('minigame-area');
+  area.innerHTML = `
+    <div class="minigame-box">
+      <div class="minigame-title">🤼 Mini-game: Bấm nhịp khi vạch đỏ vào vùng xanh để thắng đô vật (3/3)</div>
+      <div class="wrestle-track">
+        <div class="wrestle-zone"></div>
+        <div class="wrestle-marker" id="wrestle-marker"></div>
+      </div>
+      <button class="btn-hud" id="btn-wrestle-hit">💥 RA ĐÒN!</button>
+      <span style="font-size:0.82rem;margin-left:8px;font-weight:700;" id="wrestle-score">Điểm: 0/3</span>
+    </div>
+  `;
+  let score = 0;
+  let pos = 0, dir = 1.6;
+  const marker = document.getElementById('wrestle-marker');
+  const timer = setInterval(() => {
+    if (!document.getElementById('wrestle-marker')) { clearInterval(timer); return; }
+    pos += dir;
+    if (pos >= 94 || pos <= 0) dir *= -1;
+    marker.style.left = pos + '%';
+  }, 16);
+
+  document.getElementById('btn-wrestle-hit').addEventListener('click', () => {
+    if (pos >= 36 && pos <= 60) {
+      score++;
+      document.getElementById('wrestle-score').textContent = `Điểm: ${score}/3`;
+      if (score >= 3) {
+        clearInterval(timer);
+        markSolved(id);
+        document.getElementById('reward-card').classList.add('unlocked');
+      }
+    } else {
+      score = Math.max(0, score - 1);
+      document.getElementById('wrestle-score').textContent = `Trượt nhịp! Điểm: ${score}/3`;
+    }
+  });
+}
+
+// ============================================================================
+// 15. HUD, TÌM KIẾM & MINI-MAP
+// ============================================================================
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) { searchResults.classList.remove('open'); return; }
+  const matches = DATA.landmarks.filter(l => l.name.toLowerCase().includes(q));
+  searchResults.innerHTML = matches.map(m => `<div class="search-item" data-id="${m.id}">${m.name}</div>`).join('');
+  searchResults.classList.toggle('open', matches.length > 0);
+  searchResults.querySelectorAll('.search-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const lm = landmarkObjects.get(el.dataset.id);
+      if (lm) flyToPosition(lm.pos.x, lm.pos.z, lm.id);
+      searchResults.classList.remove('open');
+      searchInput.value = lm ? lm.name : '';
+    });
+  });
+});
+
+document.getElementById('btn-toggle-lights').addEventListener('click', (e) => {
+  lightsEnabled = !lightsEnabled;
+  e.currentTarget.classList.toggle('active', lightsEnabled);
+  lampLights.forEach(l => { l.group.visible = lightsEnabled; });
+});
+
+document.getElementById('btn-toggle-labels').addEventListener('click', (e) => {
+  labelsEnabled = !labelsEnabled;
+  e.currentTarget.classList.toggle('active', labelsEnabled);
+  labelRenderer.domElement.style.display = labelsEnabled ? 'block' : 'none';
+});
+
+document.getElementById('btn-toggle-ads').addEventListener('click', (e) => {
+  adsEnabled = !adsEnabled;
+  e.currentTarget.classList.toggle('active', adsEnabled);
+  adsGroup.visible = adsEnabled;
+});
+
+document.getElementById('btn-daynight').addEventListener('click', (e) => {
+  isNight = !isNight;
+  e.currentTarget.textContent = isNight ? '🌅 Hoàng hôn' : '🌙 Đêm';
+  applyDayNight();
+});
+
+document.getElementById('btn-festival').addEventListener('click', (e) => {
+  isFestival = !isFestival;
+  e.currentTarget.classList.toggle('active', isFestival);
+  festivalProps.visible = isFestival;
+  applyDayNight();
+});
+
+document.getElementById('btn-reset-cam').addEventListener('click', () => {
+  flyAnim = {
+    startCam: camera.position.clone(),
+    endCam: DEFAULT_CAM_POS.clone(),
+    startTarget: controls.target.clone(),
+    endTarget: DEFAULT_TARGET.clone(),
+    t: 0
+  };
+});
+
+document.getElementById('cards-badge').addEventListener('click', () => {
+  const list = Array.from(unlockedCards).map(id => `<li>✅ ${DATA.quiz[id].cardTitle}</li>`).join('');
+  modalCard.innerHTML = `
+    <div class="modal-header">
+      <h2 class="modal-title">Bộ Thẻ Sưu Tầm (${unlockedCards.size}/5)</h2>
+      <button class="btn-close" id="btn-close-modal">✕</button>
+    </div>
+    <p class="modal-story">Bấm vào các bong bóng <strong>?</strong> trên bản đồ và hoàn thành câu đố / mini-game để mở khóa thẻ.</p>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">${list || '<li>Chưa mở khóa thẻ nào.</li>'}</ul>
+  `;
+  modalBackdrop.classList.add('open');
+  document.getElementById('btn-close-modal').addEventListener('click', () => modalBackdrop.classList.remove('open'));
+});
+
+// Mini-map
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+function drawMinimap() {
+  mmCtx.clearRect(0, 0, 124, 124);
+  mmCtx.fillStyle = '#7a8f4b';
+  mmCtx.fillRect(0, 0, 124, 124);
+
+  // Sông góc trên trái
+  mmCtx.fillStyle = '#2f6f8f';
+  mmCtx.beginPath();
+  mmCtx.moveTo(0, 0); mmCtx.lineTo(75, 0); mmCtx.lineTo(25, 78); mmCtx.lineTo(0, 95);
+  mmCtx.closePath(); mmCtx.fill();
+
+  // Đồng lúa góc dưới phải
+  mmCtx.fillStyle = '#c9b873';
+  mmCtx.fillRect(62, 62, 62, 62);
+
+  // Vị trí người chơi
+  const px = 62 + (playerGroup.position.x / CONFIG.worldSize) * 124;
+  const pz = 62 + (playerGroup.position.z / CONFIG.worldSize) * 124;
+  mmCtx.fillStyle = '#d93829';
+  mmCtx.beginPath(); mmCtx.arc(px, pz, 4, 0, Math.PI * 2); mmCtx.fill();
+}
+
+// ============================================================================
+// 16. KHỞI CHẠY & VÒNG LẶP RENDER
+// ============================================================================
+function setProgress(pct, text) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${pct}% – ${text}`;
+}
+
+async function init() {
+  setProgress(20, 'Dựng sa bàn & đồng lúa...');
+  buildBoardAndRice();
+
+  setProgress(40, 'Dựng sông Hương & lồng bè...');
+  buildRiver();
+
+  setProgress(60, 'Dựng mạng lưới đường & tìm đường...');
+  buildRoads();
+
+  setProgress(78, 'Dựng nhà dân, cây xanh & ánh sáng...');
+  buildHousesAndTrees();
+
+  setProgress(90, 'Dựng địa danh, hotspot & quảng cáo...');
+  buildLandmarks();
+  buildHotspots();
+  buildCharactersAndNPCs();
+  buildAdsAndFestival();
+
+  setProgress(100, 'Hoàn tất!');
+  setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 300);
+}
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const elapsed = clock.getElapsedTime();
+
+  riceUniforms.uTime.value = elapsed;
+  waterUniforms.uTime.value = elapsed;
+
+  fishCages.forEach((c, i) => {
+    c.position.y = -0.2 + Math.sin(elapsed * 1.8 + i * 1.4) * 0.12;
+  });
+
+  // Đèn nhấp nháy nhẹ
+  lampLights.forEach(l => {
+    const flicker = 0.72 + Math.sin(elapsed * 6.5 + l.phase) * 0.14;
+    l.bulb.material.opacity = isNight ? Math.min(1, flicker + 0.2) : flicker * 0.65;
+  });
+
+  // Camera fly-to
+  if (flyAnim) {
+    flyAnim.t = Math.min(1, flyAnim.t + dt * 1.4);
+    const ease = 1 - Math.pow(1 - flyAnim.t, 3);
+    camera.position.lerpVectors(flyAnim.startCam, flyAnim.endCam, ease);
+    controls.target.lerpVectors(flyAnim.startTarget, flyAnim.endTarget, ease);
+    if (flyAnim.t >= 1) {
+      const cb = flyAnim.onArrive;
+      flyAnim = null;
+      if (cb) cb();
+    }
+  }
+
+  // Di chuyển trên sông ("Lên đò") hoặc đi bộ theo đường làng
+  if (isBoating) {
+    boatProgress = Math.min(boatRoute.length - 1.001, boatProgress + dt * 0.35);
+    const idx = Math.floor(boatProgress);
+    const frac = boatProgress - idx;
+    playerGroup.position.lerpVectors(boatRoute[idx], boatRoute[idx + 1], frac);
+    playerGroup.position.y = 0.25 + Math.sin(elapsed * 3) * 0.08;
+    if (boatProgress >= boatRoute.length - 1.01) isBoating = false;
+  } else if (currentPath.length > 0) {
+    const nextPt = currentPath[0];
+    const dir = new THREE.Vector3().subVectors(nextPt, playerGroup.position);
+    dir.y = 0;
+    const dist = dir.length();
+    if (dist < 1.2) {
+      currentPath.shift();
+    } else {
+      dir.normalize();
+      playerGroup.position.addScaledVector(dir, 18 * dt);
+      playerGroup.rotation.y = Math.atan2(dir.x, dir.z);
+    }
+  }
+
+  // NPC chuyển động nhẹ
+  npcs.forEach(n => {
+    n.mesh.position.x = n.origin.x + Math.sin(elapsed * 0.7 + n.phase) * 10;
+    n.mesh.position.z = n.origin.z + Math.cos(elapsed * 0.6 + n.phase) * 8;
+  });
+
+  // LOD nhãn theo khoảng cách camera
+  const camDist = camera.position.distanceTo(controls.target);
+  const farZoom = camDist > 330;
+  landmarkLabelEls.forEach(el => el.classList.toggle('lod-hidden', camDist > 460));
+  roadLabels.forEach(el => el.classList.toggle('lod-hidden', farZoom));
+
+  controls.update();
+  drawMinimap();
+  composer.render();
+  labelRenderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init().catch(showMapError);
+animate();
+} catch (error) {
+  showMapError(error);
+}
+</script>
+</body>
+</html>

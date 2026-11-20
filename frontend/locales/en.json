@@ -37,5 +37,21 @@
     "craft_villages": "8 Craft Villages",
     "map_360": "360° Map",
     "rewards": "Rewards"
+  },
+  "map": {
+    "button": "Map",
+    "coming_soon": "Coming soon",
+    "coming_soon_sign": "Coming soon",
+    "page_navigation": "Map navigation",
+    "back": "Back",
+    "home": "Home",
+    "frame_title": "Interactive simulated village map",
+    "loading": "Loading map…",
+    "error": "The map could not be loaded. Check your connection and try again.",
+    "webgl_error": "This browser cannot initialize the map's 3D graphics.",
+    "webgl_error_description": "The map requires WebGL. Enable hardware acceleration in your browser and restart it, or open this page in a browser/device that supports WebGL.",
+    "retry": "Retry",
+    "developing": "Map in development",
+    "developing_description": "A simulated map for this craft village is coming soon."
   }
 }

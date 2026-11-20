@@ -7,6 +7,7 @@ import { useProgress } from '@/context/ProgressContext';
 import { villages } from '@/data/villages';
 import { VILLAGE_IMAGES, VILLAGE_METADATA } from '@/data/villageDisplay';
 import Navbar from '@/components/Navbar';
+import VillageMapButton from '@/components/VillageMapButton';
 import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
 import {
@@ -317,11 +318,11 @@ export default function Home() {
                                         </p>
 
                                         <div className="space-y-2 mt-auto">
-                                            <div className="flex flex-col sm:flex-row gap-2">
+                                            <div className="flex flex-wrap gap-2">
                                                 <button
                                                     onClick={() => router.push(`/village/${village.id}`)}
                                                     aria-label={isCompleted ? `Xem lại làng nghề ${village.name[langKey]}` : `Bắt đầu tìm hiểu làng nghề ${village.name[langKey]}`}
-                                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs text-white shadow-md cursor-pointer"
+                                                    className="flex min-h-11 flex-1 min-w-[45%] xl:min-w-0 items-center justify-center gap-2 rounded-xl py-3 px-2 text-center font-bold text-xs text-white shadow-md cursor-pointer"
                                                     style={{ background: `linear-gradient(135deg, ${meta.gradientFrom}, ${meta.gradientTo})` }}
                                                 >
                                                     <PlayCircle aria-hidden="true" className="w-4 h-4" />
@@ -332,11 +333,16 @@ export default function Home() {
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setActiveVR(village.id); }}
                                                     aria-label={`Khám phá thực tế ảo 360 độ làng ${village.name[langKey]}`}
-                                                    className="flex-1 py-2.5 bg-stone-900 text-amber-400 border border-amber-500/50 rounded-xl font-bold text-xs hover:bg-stone-800 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                                                    className="flex min-h-11 flex-1 min-w-[45%] xl:min-w-0 items-center justify-center gap-2 rounded-xl border border-amber-500/50 bg-stone-900 px-2 py-2.5 text-center font-bold text-xs text-amber-400 shadow-lg transition-colors hover:bg-stone-800 cursor-pointer"
                                                 >
                                                     <Compass aria-hidden="true" className="w-4 h-4" />
-                                                    <span>Trải nghiệm 360°</span>
+                                                    <span className="leading-tight">Trải nghiệm 360°</span>
                                                 </button>
+
+                                                <VillageMapButton
+                                                    villageId={village.id}
+                                                    villageName={village.name[langKey]}
+                                                />
                                             </div>
 
                                             <button
